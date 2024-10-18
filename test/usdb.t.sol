@@ -28,6 +28,7 @@ contract UsdbTest is StdCheats, Test {
   address public constant owner = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
   address manager = address(0x002b);
   address feeRecipient = address(0x006f);
+  address treasury = address(0x007fa);
 
   // User
   address alice = address(0x003c);
@@ -51,13 +52,13 @@ contract UsdbTest is StdCheats, Test {
     oracle = new SPCTPriceOracle();
 
     // Deploy SPCTPool
-    spct = new SPCTPool(owner, IERC20(address(usdc)));
+    spct = new SPCTPool(owner);
 
     // Deploy USDB
-    address endpointLayerZero = 0x6EDCE65403992e310A62460808c4b910D972f10f;
-    usdb = new USDb(owner, endpointLayerZero, IERC20(address(usdc)), ISPCTPool(address(spct)), ISPCTPriceOracle(address(oracle)));
-    // Deploy sUSDB
     uint24 CDPeriod = 3 days;
+    address endpointLayerZero = 0x6EDCE65403992e310A62460808c4b910D972f10f;
+    usdb = new USDb(owner, endpointLayerZero, IERC20(address(usdc)), ISPCTPool(address(spct)), ISPCTPriceOracle(address(oracle)), CDPeriod);
+    // Deploy sUSDB
     susdb = new SUSDb(owner, IERC20(address(usdb)), CDPeriod);
 
     // Grant Role
@@ -70,7 +71,9 @@ contract UsdbTest is StdCheats, Test {
 
     // whitelist
     vm.startPrank(manager);
+    usdb.setTreasury(treasury);
     spct.addToWhitelist(address(usdb));
+    spct.setUsdbAddress(address(usdb));
     vm.stopPrank();
   }
 
@@ -79,7 +82,12 @@ contract UsdbTest is StdCheats, Test {
     _mintUSDb(alice, _convertToDecimals6(100 ether));
     _mintUSDb(bobby, _convertToDecimals6(100 ether));
     _mintUSDb(charl, _convertToDecimals6(100 ether));
-    
+
+    // check balance usdc
+    assertEq(usdc.balanceOf(alice), 0);
+    assertEq(usdc.balanceOf(bobby), 0);
+    assertEq(usdc.balanceOf(charl), 0);
+
     // check balance usdb
     assertEq(usdb.balanceOf(alice), 100 ether);
     assertEq(usdb.balanceOf(bobby), 100 ether);
@@ -88,23 +96,43 @@ contract UsdbTest is StdCheats, Test {
     // spct pool balance in usdb
     assertEq(spct.balanceOf(address(usdb)), 300 ether);
 
-    // usdc balance in spct
-    assertEq(usdc.balanceOf(address(spct)), _convertToDecimals6(300 ether));
+   // check balance treasury
+    assertEq(usdc.balanceOf(treasury), _convertToDecimals6(300 ether));
 
     vm.warp(block.timestamp + 1 days);
 
     // redeem usdb
-    _redeemUSDb(alice, 100 ether);
-    _redeemUSDb(bobby, 100 ether);
-    _redeemUSDb(charl, 100 ether);
+    _cdRedeemUSDb(alice, 100 ether);
+    _cdRedeemUSDb(bobby, 100 ether);
+    _cdRedeemUSDb(charl, 100 ether);
 
     // check balance usdb
     assertEq(usdb.balanceOf(alice), 0 ether);
     assertEq(usdb.balanceOf(bobby), 0 ether);
     assertEq(usdb.balanceOf(charl), 0 ether);
 
-    // spct pool balance in usdb
-    assertEq(spct.balanceOf(address(usdb)), 0 ether); 
+    // check balance usdc
+    assertEq(usdc.balanceOf(alice), 0);
+    assertEq(usdc.balanceOf(bobby), 0);
+    assertEq(usdc.balanceOf(charl), 0);
+
+    vm.warp(block.timestamp + 3 days);
+
+    // treasury must transfer usdc to usdb before user redeem cd period ends
+    vm.startPrank(treasury);
+    usdc.approve(address(usdb), _convertToDecimals6(300 ether));
+    usdc.transfer(address(usdb), _convertToDecimals6(300 ether));
+    vm.stopPrank();
+
+    // redeem usdb
+    _redeemUSDb(alice);
+    _redeemUSDb(bobby);
+    _redeemUSDb(charl);
+
+    // check balance usdc
+    assertEq(usdc.balanceOf(alice), _convertToDecimals6(100 ether));
+    assertEq(usdc.balanceOf(bobby), _convertToDecimals6(100 ether));
+    assertEq(usdc.balanceOf(charl), _convertToDecimals6(100 ether));
   }
 
   function testUsdbMintRedeemWithUsdbFee() public {
@@ -129,13 +157,11 @@ contract UsdbTest is StdCheats, Test {
     assertEq(usdb.balanceOf(feeRecipient), feeAmount);
     // usdb store spct full amount
     assertEq(spct.balanceOf(address(usdb)), convertToSPCT);
-    // usdc balance in spct
-    assertEq(usdc.balanceOf(address(spct)), aliceMintedInDecimals6);
 
     vm.warp(block.timestamp + 1 days);
 
     // redeem usdb
-    _redeemUSDb(alice, aliceBalanceAfterFee);
+    _cdRedeemUSDb(alice, aliceBalanceAfterFee);
 
     uint256 redeemFeeAmount = aliceBalanceAfterFee.mul(usdb.redeemFeeRate()).div(usdb.FEE_COEFFICIENT());
     uint256 aliceBalanceAfterRedeemFee = aliceBalanceAfterFee.sub(redeemFeeAmount);
@@ -146,10 +172,20 @@ contract UsdbTest is StdCheats, Test {
     assertEq(usdb.balanceOf(feeRecipient), feeAmount + redeemFeeAmount);
     // spct pool balance in usdb
     assertEq(spct.balanceOf(address(usdb)), convertToSPCT - aliceBalanceAfterRedeemFee);
+
+    vm.warp(block.timestamp + 3 days);
+
+    // treasury must transfer usdc to usdb before user redeem cd period ends
+    vm.startPrank(treasury);
+    usdc.approve(address(usdb), convertToUSDC);
+    usdc.transfer(address(usdb), convertToUSDC);
+    vm.stopPrank();
+
+    // redeem usdb
+    _redeemUSDb(alice);
+
     // alice get usdc
     assertEq(usdc.balanceOf(alice), convertToUSDC);
-    // usdc balance in spct
-    assertEq(usdc.balanceOf(address(spct)), (convertToSPCT - aliceBalanceAfterRedeemFee).div(1e12));
   }
 
   function testUsdbMintRedeemWithSPCTFee() public {
@@ -175,13 +211,11 @@ contract UsdbTest is StdCheats, Test {
     assertEq(spct.balanceOf(feeRecipient), spctFeeAmount);
     // usdb store spct - fee amount
     assertEq(spct.balanceOf(address(usdb)), aliceBalanceAfterFee);
-    // usdc balance in spct
-    assertEq(usdc.balanceOf(address(spct)), aliceMintedInDecimals6);
 
     vm.warp(block.timestamp + 1 days);
 
     // redeem usdb
-    _redeemUSDb(alice, aliceBalanceAfterFee);
+    _cdRedeemUSDb(alice, aliceBalanceAfterFee);
 
     uint256 spctRedeemFeeAmount = aliceBalanceAfterFee.mul(spct.redeemFeeRate()).div(usdb.FEE_COEFFICIENT());
     uint256 aliceBalanceAfterRedeemFee = aliceBalanceAfterFee.sub(spctRedeemFeeAmount);
@@ -192,11 +226,19 @@ contract UsdbTest is StdCheats, Test {
     assertEq(spct.balanceOf(feeRecipient), spctFeeAmount + spctRedeemFeeAmount);
     // spct pool balance in usdb
     assertEq(spct.balanceOf(address(usdb)), 0 ether);
+
+    vm.warp(block.timestamp + 3 days);
+
+    // treasury must transfer usdc to usdb before user redeem cd period ends
+    vm.startPrank(treasury);
+    usdc.approve(address(usdb), convertToUSDC);
+    usdc.transfer(address(usdb), convertToUSDC);
+    vm.stopPrank();
+
+    // redeem usdb
+    _redeemUSDb(alice);
     // alice get usdc
     assertEq(usdc.balanceOf(alice), convertToUSDC);
-    // usdc balance in spct
-    assertEq(usdc.balanceOf(address(spct)), (convertToSPCT - aliceBalanceAfterRedeemFee).div(1e12));
-
   }
 
   function testUsdbMintWithBothFee() public {
@@ -212,7 +254,7 @@ contract UsdbTest is StdCheats, Test {
     spct.setFeeRecipient(feeRecipient);
     vm.stopPrank();
     
-     // Mint usdb
+    // Mint usdb
     uint256 aliceMinted = 100 ether;
     uint256 aliceMintedInDecimals6 = _convertToDecimals6(aliceMinted);
     _mintUSDb(alice, aliceMintedInDecimals6);
@@ -231,13 +273,11 @@ contract UsdbTest is StdCheats, Test {
     // check spct balance
     assertEq(spct.balanceOf(feeRecipient), spctFeeAmount);
     assertEq(spct.balanceOf(address(usdb)), spctAmountAfterFee);
-    // usdc balance in spct
-    assertEq(usdc.balanceOf(address(spct)), aliceMintedInDecimals6);
 
     vm.warp(block.timestamp + 1 days);
 
     // redeem usdb
-    _redeemUSDb(alice, amountAfterFee);
+    _cdRedeemUSDb(alice, amountAfterFee);
 
     uint256 usdbRedeemFeeAmount = amountAfterFee.mul(usdb.redeemFeeRate()).div(usdb.FEE_COEFFICIENT());
     uint256 amountAfterRedeemFee = amountAfterFee.sub(usdbRedeemFeeAmount);
@@ -250,6 +290,17 @@ contract UsdbTest is StdCheats, Test {
     assertEq(usdb.balanceOf(feeRecipient), feeAmount + usdbRedeemFeeAmount);
     // feeRecipient get fee in spct
     assertEq(spct.balanceOf(feeRecipient), spctFeeAmount + spctRedeemFeeAmount);
+
+    vm.warp(block.timestamp + 3 days);
+
+    // treasury must transfer usdc to usdb before user redeem cd period ends
+    vm.startPrank(treasury);
+    usdc.approve(address(usdb), convertToUSDC);
+    usdc.transfer(address(usdb), convertToUSDC);
+    vm.stopPrank();
+
+    // redeem usdb
+    _redeemUSDb(alice);
     // alice get usdc
     assertEq(usdc.balanceOf(alice), convertToUSDC);
     // spct pool balance in usdb
@@ -257,8 +308,7 @@ contract UsdbTest is StdCheats, Test {
     assertEq(spct.balanceOf(address(usdb)), expectedSPCTBalanceInUSDb);
     // usdc balance in spct
     uint256 expectedUSDCBalanceInSPCT = aliceMintedInDecimals6.sub(convertToUSDC);
-    assertEq(usdc.balanceOf(address(spct)), expectedUSDCBalanceInSPCT);
-    
+    assertEq(usdc.balanceOf(treasury), expectedUSDCBalanceInSPCT);
   } 
 
   function testSpctDepositByFiatAndUsdbDepositBySPCT() public {
@@ -526,13 +576,19 @@ contract UsdbTest is StdCheats, Test {
   function _mintUSDb(address _who, uint256 _amount) internal {
     vm.startPrank(_who);
     usdc.approve(address(usdb), type(uint256).max);
-    usdb.deposit(_amount);
+    usdb.deposit(_who,_amount);
     vm.stopPrank();
   }
 
-  function _redeemUSDb(address _who, uint256 _amount) internal {
+  function _cdRedeemUSDb(address _who, uint256 _amount) internal {
     vm.startPrank(_who);
-    usdb.redeem(_amount);
+    usdb.cdRedeem(_amount);
+    vm.stopPrank();
+  }
+
+  function _redeemUSDb(address _who) internal {
+    vm.startPrank(_who);
+    usdb.redeem();
     vm.stopPrank();
   }
 

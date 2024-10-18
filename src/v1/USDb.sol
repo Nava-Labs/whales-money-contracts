@@ -25,8 +25,14 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     // Migration mode (disable deposits)
     bool public mode; // false by default
 
+    // Max withdraw cd time.
+    uint24 public constant MAX_CD_PERIOD = 90 days;
+    uint24 public CDPeriod;
+
     // Used to calculate total pooled SPCT.
     uint256 public totalPooledSPCT;
+    // Used to calculate total redeem request.
+    uint256 public totalRedeemInCD;
     // Used to calculate collateral rate.
     uint256 public constant collateralRate = 1;
 
@@ -39,8 +45,17 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     uint256 public redeemFeeRate;
     // Protocol feeRecipient should be a mulsig wallet.
     address public feeRecipient;
+    // Protocol treasury should be a mulsig wallet.
+    address public treasury;
     // Make owner transfer 2 step.
     address private _pendingOwner;
+
+    struct UserCD {
+        uint256 time;
+        uint256 amount;
+    }
+
+    mapping(address => UserCD) public _userCD;
 
     // Lend token
     IERC20 public immutable usdc;
@@ -57,18 +72,21 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     event ModeSwitch(bool mode);
 
     event Deposit(address indexed user, uint256 indexed amount);
+    event CDRedeem(address indexed user, uint256 indexed amount, uint256 indexed redeemEndedAt);
     event Redeem(address indexed user, uint256 indexed amount);
     event Mint(address indexed user, uint256 indexed amount);
     event Burn(address indexed user, uint256 indexed amount);
 
+    event CDPeriodChanged(uint24 indexed newCDPeriod);
     event MintFeeRateChanged(uint256 indexed newFeeRate);
     event RedeemFeeRateChanged(uint256 indexed newFeeRate);
     event FeeRecipientChanged(address indexed newFeeRecipient);
+    event TreasuryChanged(address indexed newTreasury);
     event OracleChanged(address newOracle);
 
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 
-    constructor(address _admin, address _endpoint, IERC20 _usdc, ISPCTPool _spct, ISPCTPriceOracle _oracle)
+    constructor(address _admin, address _endpoint, IERC20 _usdc, ISPCTPool _spct, ISPCTPriceOracle _oracle, uint24 _cdPeriod)
         OFT("USDb", "USDb", _endpoint, _admin)
         ERC20Permit("USDb")
         Ownable(_admin)
@@ -77,6 +95,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         usdc = _usdc;
         spct = _spct;
         oracle = _oracle;
+        CDPeriod = _cdPeriod;
     }
 
     // @dev Sets an implicit cap on the amount of tokens, over uint64.max() will need some sort of outbound cap / totalSupply cap
@@ -129,13 +148,12 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
      *
      * @param _amount the amount of USDC
      */
-    function deposit(uint256 _amount) external whenNotPaused checkCollateralRate {
+    function deposit(address receiver, uint256 _amount) external whenNotPaused checkCollateralRate {
         if (mode) revert("PLEASE_MIGRATE_TO_NEW_VERSION");
         require(_amount > 0, "DEPOSIT_AMOUNT_IS_ZERO");
-        require(!_blacklist[msg.sender], "RECIPIENT_IN_BLACKLIST");
+        require(!_blacklist[receiver], "RECIPIENT_IN_BLACKLIST");
 
-        IERC20(usdc).safeTransferFrom(msg.sender, address(this), _amount);
-        IERC20(usdc).safeIncreaseAllowance(address(spct), _amount); // approve for depositing collateral
+        IERC20(usdc).safeTransferFrom(msg.sender, treasury, _amount);
 
         // Due to different precisions, convert it to USDb.
         uint256 convertToSPCT = _amount.mul(1e12);
@@ -145,14 +163,14 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         // calculate fee with USDb
         if (mintFeeRate == 0) {
             if (spctMintFeeRate == 0) {
-                _mintUSDb(msg.sender, convertToSPCT);
+                _mintUSDb(receiver, convertToSPCT);
 
                 spct.deposit(_amount);
             } else {
                 uint256 spctFeeAmount = convertToSPCT.mul(spctMintFeeRate).div(FEE_COEFFICIENT);
                 uint256 spctAmountAfterFee = convertToSPCT.sub(spctFeeAmount);
 
-                _mintUSDb(msg.sender, spctAmountAfterFee);
+                _mintUSDb(receiver, spctAmountAfterFee);
 
                 spct.deposit(_amount);
             }
@@ -161,7 +179,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
                 uint256 feeAmount = convertToSPCT.mul(mintFeeRate).div(FEE_COEFFICIENT);
                 uint256 amountAfterFee = convertToSPCT.sub(feeAmount);
 
-                _mintUSDb(msg.sender, amountAfterFee);
+                _mintUSDb(receiver, amountAfterFee);
 
                 if (feeAmount != 0) {
                     _mintUSDb(feeRecipient, feeAmount);
@@ -174,7 +192,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
                 uint256 feeAmount = spctAmountAfterFee.mul(mintFeeRate).div(FEE_COEFFICIENT);
                 uint256 amountAfterFee = spctAmountAfterFee.sub(feeAmount);
 
-                _mintUSDb(msg.sender, amountAfterFee);
+                _mintUSDb(receiver, amountAfterFee);
 
                 if (feeAmount != 0) {
                     _mintUSDb(feeRecipient, feeAmount);
@@ -184,7 +202,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
             }
         }
 
-        emit Deposit(msg.sender, _amount);
+        emit Deposit(receiver, _amount);
     }
 
     /**
@@ -218,14 +236,13 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     }
 
     /**
-     * @notice redeem USDb. (get back USDC from borrower and release collateral)
+     * @notice redeem USDb in cooldown period. (get back USDC from borrower and release collateral)
      * 18 decimal input
-     * Emits a `Redeem` event.
+     * Emits a `CDRedeem` event.
      *
      * @param _amount the amount of USDb.
      */
-    function redeem(uint256 _amount) external whenNotPaused checkCollateralRate {
-        require(spct.reserveUSD().mul(1e12) >= _amount, "RESERVE_INSUFFICIENT");
+    function cdRedeem(uint256 _amount) external whenNotPaused checkCollateralRate {
         require(_amount > 0, "REDEEM_AMOUNT_IS_ZERO");
         require(!_blacklist[msg.sender], "RECIPIENT_IN_BLACKLIST");
 
@@ -234,6 +251,8 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         // Get redeem rate from spct for calculating.
         uint256 spctRedeemFeeRate = spct.redeemFeeRate();
 
+        uint256 redeemEndedAt;
+
         // calculate fee with USDb
         if (redeemFeeRate == 0) {
             if (spctRedeemFeeRate == 0) {
@@ -241,7 +260,10 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
                 spct.redeem(_amount);
                 convertToUSDC = _amount.div(1e12);
-                IERC20(usdc).safeTransfer(msg.sender, convertToUSDC);
+                redeemEndedAt = block.timestamp + CDPeriod;
+                _userCD[msg.sender].time = redeemEndedAt;
+                _userCD[msg.sender].amount += convertToUSDC;
+                totalRedeemInCD = totalRedeemInCD.add(convertToUSDC);
             } else {
                 uint256 spctFeeAmount = _amount.mul(spctRedeemFeeRate).div(FEE_COEFFICIENT);
                 uint256 spctAmountAfterFee = _amount.sub(spctFeeAmount);
@@ -250,7 +272,10 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
                 spct.redeem(_amount);
                 convertToUSDC = spctAmountAfterFee.div(1e12);
-                IERC20(usdc).safeTransfer(msg.sender, convertToUSDC);
+                redeemEndedAt = block.timestamp + CDPeriod;
+                _userCD[msg.sender].time = redeemEndedAt;
+                _userCD[msg.sender].amount += convertToUSDC;
+                totalRedeemInCD = totalRedeemInCD.add(convertToUSDC);
             }
         } else {
             if (spctRedeemFeeRate == 0) {
@@ -265,7 +290,10 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
                 spct.redeem(amountAfterFee);
                 convertToUSDC = amountAfterFee.div(1e12);
-                IERC20(usdc).safeTransfer(msg.sender, convertToUSDC);
+                redeemEndedAt = block.timestamp + CDPeriod;
+                _userCD[msg.sender].time = redeemEndedAt;
+                _userCD[msg.sender].amount += convertToUSDC;
+                totalRedeemInCD = totalRedeemInCD.add(convertToUSDC);
             } else {
                 uint256 feeAmount = _amount.mul(redeemFeeRate).div(FEE_COEFFICIENT);
                 uint256 amountAfterFee = _amount.sub(feeAmount);
@@ -280,11 +308,32 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
                 spct.redeem(amountAfterFee);
                 convertToUSDC = spctAmountAfterFee.div(1e12);
-                IERC20(usdc).safeTransfer(msg.sender, convertToUSDC);
+                redeemEndedAt = block.timestamp + CDPeriod;
+                _userCD[msg.sender].time = redeemEndedAt;
+                _userCD[msg.sender].amount += convertToUSDC;
+                totalRedeemInCD = totalRedeemInCD.add(convertToUSDC);
             }
         }
 
-        emit Redeem(msg.sender, _amount);
+        emit CDRedeem(msg.sender, convertToUSDC, redeemEndedAt);
+    }
+
+    /**
+     * @notice Used to claim USDC after CD has finished.
+     * @dev Works on both mode.
+     */
+    function redeem() external {
+        UserCD storage userCD = _userCD[msg.sender];
+        require(block.timestamp >= userCD.time || CDPeriod == 0, "UNSTAKE_FAILED");
+
+        uint256 amountToWithdraw = userCD.amount;
+        userCD.time = 0;
+        userCD.amount = 0;
+        totalRedeemInCD = totalRedeemInCD.sub(amountToWithdraw);
+
+        IERC20(usdc).safeTransfer(msg.sender, amountToWithdraw);
+
+        emit Redeem(msg.sender, amountToWithdraw);
     }
 
     /**
@@ -385,6 +434,18 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     }
 
     /**
+     * @notice set new CD period.
+     *
+     * @param newCDPeriod new CD period.
+     */
+    function setNewCDPeriod(uint24 newCDPeriod) external onlyRole(POOL_MANAGER_ROLE) {
+        require(newCDPeriod < MAX_CD_PERIOD, "SHOULD_BE_LESS_THAN_MAX_CD_PERIOD");
+
+        CDPeriod = newCDPeriod;
+        emit CDPeriodChanged(newCDPeriod);
+    }
+
+    /**
      * @notice Mint fee.
      *
      * @param newMintFeeRate new mint fee rate.
@@ -415,6 +476,17 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         require(newFeeRecipient != address(0), "SET_UP_TO_ZERO_ADDR");
         feeRecipient = newFeeRecipient;
         emit FeeRecipientChanged(newFeeRecipient);
+    }
+
+    /**
+     * @notice treasury address.
+     *
+     * @param newTreasury new treasury address.
+     */
+    function setTreasury(address newTreasury) external onlyRole(POOL_MANAGER_ROLE) {
+        require(newTreasury != address(0), "SET_UP_TO_ZERO_ADDR");
+        treasury = newTreasury;
+        emit TreasuryChanged(newTreasury);
     }
 
     /**

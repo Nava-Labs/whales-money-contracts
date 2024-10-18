@@ -17,13 +17,8 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
 
     bytes32 public constant POOL_MANAGER_ROLE = keccak256("POOL_MANAGER_ROLE");
 
-    // Used to calculate total executed shares.
-    uint256 public executedUSD;
     // Used to calculate total pooled USD.
     uint256 public totalPooledUSD;
-    // Used to calculate the reserve USD in pool.
-    uint256 public reserveUSD;
-
     // Fee Zone
     uint256 public constant FEE_COEFFICIENT = 1e8;
     // Fee should be less than 1%.
@@ -34,8 +29,8 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     // Protocol feeRecipient should be a mulsig wallet.
     address public feeRecipient;
 
-    // Used to mint SPCT.
-    IERC20 public immutable usdc;
+    // Usdb address
+    address public usdb;
 
     /**
      * @dev SPCT only available for KYC Users.
@@ -50,12 +45,17 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     event MintFeeRateChanged(uint256 indexed newFeeRate);
     event RedeemFeeRateChanged(uint256 indexed newFeeRate);
     event FeeRecipientChanged(address newFeeRecipient);
+    event UsdbAddressChanged(address newUsdbAddress);
 
-    constructor(address admin, IERC20 _usdc) ERC20("Secured Private Credit Token", "SPCT") ERC20Permit("SPCT") {
+    constructor(address admin) ERC20("Secured Private Credit Token", "SPCT") ERC20Permit("SPCT") {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        usdc = _usdc;
         // initialize
         _permission[address(0)] = true;
+    }
+
+    modifier onlyUSDb() {
+        require(msg.sender == usdb, "CAN_ONLY_CALLED_BY_USDB");
+        _;
     }
 
     /**
@@ -78,11 +78,9 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
      *
      * @param _amount the amount of USDC
      */
-    function deposit(uint256 _amount) external whenNotPaused {
+    function deposit(uint256 _amount) external whenNotPaused onlyUSDb{
         require(_amount > 0, "DEPOSIT_AMOUNT_IS_ZERO");
-
-        usdc.transferFrom(msg.sender, address(this), _amount);
-        reserveUSD = reserveUSD.add(_amount);
+        
         totalPooledUSD = totalPooledUSD.add(_amount);
 
         // Due to different precisions, convert it to SPCT.
@@ -123,7 +121,7 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
      *
      * @param _amount the amount of SPCT.
      */
-    function redeem(uint256 _amount) external whenNotPaused {
+    function redeem(uint256 _amount) external whenNotPaused onlyUSDb {
         require(_amount > 0, "REDEEM_AMOUNT_IS_ZERO");
 
         // Due to different precisions, convert it to SPCT.
@@ -145,8 +143,6 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
             }
         }
 
-        usdc.transfer(msg.sender, convertToUSDC);
-        reserveUSD = reserveUSD.sub(convertToUSDC);
         totalPooledUSD = totalPooledUSD.sub(convertToUSDC);
 
         emit Redeem(msg.sender, _amount);
@@ -164,37 +160,6 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
         emit Redeem(msg.sender, _amount);
     }
 
-    /**
-     * @notice Execute USDC to buy private credit.
-     * Emits a `Execute` event.
-     *
-     * @param _amount the amount of USDC (6 decimals).
-     */
-    function execute(uint256 _amount) external onlyRole(POOL_MANAGER_ROLE) {
-        require(_amount > 0, "EXECUTE_AMOUNT_IS_ZERO");
-
-        executedUSD = executedUSD.add(_amount);
-        reserveUSD = reserveUSD.sub(_amount);
-        usdc.transfer(msg.sender, _amount);
-
-        emit Execute(_amount);
-    }
-
-    /**
-     * @notice Repay USDC from private credit.
-     * Emits a `Repay` event.
-     *
-     * @param _amount the amount of USDC (6 decimals).
-     */
-    function repay(uint256 _amount) external onlyRole(POOL_MANAGER_ROLE) {
-        if (_amount > executedUSD) revert("REPAY_AMOUNT_EXCEED_EXECUTED_SHARES");
-
-        executedUSD = executedUSD.sub(_amount);
-        reserveUSD = reserveUSD.add(_amount);
-        usdc.transferFrom(msg.sender, address(this), _amount);
-
-        emit Repay(_amount);
-    }
 
     /**
      * @notice Moves `_amount` tokens from `_sender` to `_recipient`.
@@ -290,16 +255,23 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     }
 
     /**
+     * @notice usdb address.
+     *
+     * @param newUsdbAddress new usdb address.
+     */
+    function setUsdbAddress(address newUsdbAddress) external onlyRole(POOL_MANAGER_ROLE) {
+        require(newUsdbAddress != address(0), "SET_UP_TO_ZERO_ADDR");
+        usdb = newUsdbAddress;
+        emit UsdbAddressChanged(usdb);
+    }
+
+    /**
      * @notice Rescue ERC20 tokens locked up in this contract.
      * @param token ERC20 token contract address.
      * @param to recipient address.
      * @param amount amount to withdraw.
      */
     function rescueERC20(IERC20 token, address to, uint256 amount) external onlyRole(POOL_MANAGER_ROLE) {
-        // If is USDC, check reserve usd amount first.
-        if (address(token) == address(usdc)) {
-            require(amount <= usdc.balanceOf(address(this)).sub(reserveUSD), "USDC_RESCUE_AMOUNT_EXCEED_DEBIT");
-        }
         token.safeTransfer(to, amount);
     }
 }
