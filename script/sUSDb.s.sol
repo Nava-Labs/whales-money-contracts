@@ -5,6 +5,7 @@ import "forge-std/Script.sol";
 import { console2 } from "forge-std/console2.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { SUSDb } from "../src/v1/sUSDb.sol";
+import { RewardDistributor } from "../src/v1/RewardDistributor.sol";
 import { USDbFlat } from "../src/v1/USDbFlat.sol";
 
 
@@ -26,6 +27,20 @@ contract DeploysUSDBTestnet is Script {
         console.log(
             "contract deployed on with address: ",
             address(_susdb)
+        );
+    }
+
+    function launchRewardDistributor(address usdbAddress, address susdbAddress) public {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        
+        
+        vm.startBroadcast(deployerPrivateKey);
+        RewardDistributor _rewardDistributor = new RewardDistributor(usdbAddress, susdbAddress);
+        vm.stopBroadcast();
+
+        console.log(
+            "contract deployed on with address: ",
+            address(_rewardDistributor)
         );
     }
 }
