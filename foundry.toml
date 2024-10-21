@@ -9,9 +9,11 @@ remappings = [
     '@layerzerolabs/lz-evm-oapp-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/oapp/',
     '@layerzerolabs/lz-evm-messagelib-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/messagelib/',
     '@openzeppelin/=lib/openzeppelin-contracts/',
+    'solidity-bytes-utils/=lib/solidity-bytes-utils/',
 ]
 
 [rpc_endpoints]
+baseSepolia = "${BASE_SEPOLIA_RPC_URL}"
 bscTestnet = "${BSC_TESTNET_RPC_URL}"
 arbitrumSepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
 
