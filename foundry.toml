@@ -10,6 +10,7 @@ remappings = [
     '@layerzerolabs/lz-evm-messagelib-v2/=lib/layerzero-v2/packages/layerzero-v2/evm/messagelib/',
     '@openzeppelin/=lib/openzeppelin-contracts/',
     'solidity-bytes-utils/=lib/solidity-bytes-utils/',
+    '@chainlink/=lib/chainlink/'
 ]
 
 [rpc_endpoints]
