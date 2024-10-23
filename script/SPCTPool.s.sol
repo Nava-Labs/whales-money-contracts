@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
-import { SPCTPool } from "../src/v1/SPCTPool.sol";
+import { SPCTPool } from "../src/core/SPCTPool.sol";
 
 contract DeploySPCTPoolTestnet is Script {
     function launch() public {
