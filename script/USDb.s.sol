@@ -30,7 +30,7 @@ contract DeployUSDBTestnet is Script {
     }
 }
 
-contract InteractionDeposit is Script {
+contract Interaction is Script {
     function deposit(address _usdb, address receiver, uint256 _amount) public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
@@ -46,9 +46,7 @@ contract InteractionDeposit is Script {
         USDb(payable(_usdb)).depositBySPCT(_amount);
         vm.stopBroadcast();
     }
-}
 
-contract InteractionRedeem is Script {
     function redeem(address _usdb, uint256 _amount) public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
@@ -64,4 +62,5 @@ contract InteractionRedeem is Script {
         USDb(payable(_usdb)).cdRedeem(_amount);
         vm.stopBroadcast();
     }
+    
 }

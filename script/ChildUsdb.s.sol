@@ -20,7 +20,9 @@ contract DeployChildUSDbTestnet is Script {
             address(_childUsdb)
         );
     }
+}
 
+contract Interaction is Script {
     function setPeer(address child, uint32 destId, address peer) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
@@ -30,5 +32,5 @@ contract DeployChildUSDbTestnet is Script {
 
     function addressToBytes32(address _addr) internal pure returns (bytes32) {
         return bytes32(uint256(uint160(_addr)));
-    }
+    }    
 }
