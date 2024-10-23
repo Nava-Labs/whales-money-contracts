@@ -231,6 +231,13 @@ contract OFTInteraction is Script {
         vm.stopBroadcast();
     }
 
+    function setPeer(address _oft, uint32 _eid, address _peer) external {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+        OFT(_oft).setPeer(_eid, addressToBytes32(_peer));
+        vm.stopBroadcast();
+    }
+
     function sendL0(address _oft, uint32 _eid, address _recipientAddress) external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
