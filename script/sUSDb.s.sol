@@ -11,7 +11,7 @@ import {sUSDbOFTAdapter} from "../src/core/sUSDbLayerZeroAdapter/sUSDbOFTAdapter
 import {BondlinkLayerZeroAdapter} from "../src/core/sUSDbLayerZeroAdapter/BondlinkLayerZeroAdapter.sol";
 
 contract DeploysUSDBTestnet is Script {
-    function launch() public {
+    function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
         address admin = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
@@ -29,23 +29,10 @@ contract DeploysUSDBTestnet is Script {
             address(_susdb)
         );
     }
-
-    function launchRewardDistributor(address usdbAddress, address susdbAddress) public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
-        vm.startBroadcast(deployerPrivateKey);
-        RewardDistributor _rewardDistributor = new RewardDistributor(usdbAddress, susdbAddress);
-        vm.stopBroadcast();
-
-        console.log(
-            "contract deployed on with address: ",
-            address(_rewardDistributor)
-        );
-    }
 }
 
 contract DeploysUSDBOftAdapterTestnet is Script {
-    function launch() public {
+    function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
         address token = 0x109b9Ffb62622A500B6641b10FE98e71eed4671F;

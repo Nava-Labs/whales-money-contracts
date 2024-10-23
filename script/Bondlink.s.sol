@@ -11,6 +11,7 @@ import {SPCTPool} from "../src/core/SPCTPool.sol";
 import {SPCTPriceOracle} from "../src/core/oracle/SPCTPriceOracle.sol";
 import {ISPCTPool} from "../src/interfaces/ISPCTPool.sol";
 import {ISPCTPriceOracle} from "../src/interfaces/ISPCTPriceOracle.sol";
+import {RewardDistributor} from "../src/core/RewardDistributor.sol";
 
 contract DeployBondlinkTestnet is Script {
     function run() public {
@@ -42,12 +43,14 @@ contract DeployBondlinkTestnet is Script {
         _spctPool.addToWhitelist(address(_usdb));
         _spctPool.addToWhitelist(feeRecipient);
         _spctPool.setUsdbAddress(address(_usdb));
-
+        // Reward Distributor
+        RewardDistributor _rewardDistributor = new RewardDistributor(address(_usdb), address(_susdb));
         vm.stopBroadcast();
 
-        console2.log("contract deployed on with address: ", address(_oracle));
-        console2.log("contract deployed on with address: ", address(_spctPool));
-        console2.log("contract deployed on with address: ", address(_usdb));
-        console2.log("contract deployed on with address: ", address(_susdb));
+        console2.log("Orcale deployed on with address: ", address(_oracle));
+        console2.log("SPCTPool deployed on with address: ", address(_spctPool));
+        console2.log("USDB deployed on with address: ", address(_usdb));
+        console2.log("sUSDB deployed on with address: ", address(_susdb));
+        console2.log("RewardDistributor deployed on with address: ", address(_rewardDistributor));
     }   
 }
