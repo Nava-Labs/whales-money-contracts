@@ -6,7 +6,7 @@ import {console2} from "forge-std/console2.sol";
 import { SPCTPool } from "../src/core/SPCTPool.sol";
 
 contract DeploySPCTPoolTestnet is Script {
-    function launch() public {
+    function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address admin = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
         

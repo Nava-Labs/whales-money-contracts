@@ -6,7 +6,7 @@ import { console2 } from "forge-std/console2.sol";
 import { SPCTPriceOracle } from "../src/core/oracle/SPCTPriceOracle.sol";
 
 contract DeploySPCTPriceOracleTestnet is Script {
-    function launch() public {
+    function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
     
         vm.startBroadcast(deployerPrivateKey);

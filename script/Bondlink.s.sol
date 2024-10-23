@@ -13,7 +13,7 @@ import {ISPCTPool} from "../src/interfaces/ISPCTPool.sol";
 import {ISPCTPriceOracle} from "../src/interfaces/ISPCTPriceOracle.sol";
 
 contract DeployBondlinkTestnet is Script {
-    function launch() public {
+    function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address admin = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
         address feeRecipient = 0x68E76Ec846501527d08B27BC9259b70f5E590AF6;

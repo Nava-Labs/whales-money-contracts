@@ -9,7 +9,6 @@ import {RewardDistributor} from "../src/core/RewardDistributor.sol";
 import {USDbFlat} from "../src/core/USDbFlat.sol";
 import {sUSDbOFTAdapter} from "../src/core/sUSDbLayerZeroAdapter/sUSDbOFTAdapter.sol";
 import {BondlinkLayerZeroAdapter} from "../src/core/sUSDbLayerZeroAdapter/BondlinkLayerZeroAdapter.sol";
-import {IBridgeToken} from "../src/core/sUSDbLayerZeroAdapter/OFTExternal.sol";
 
 contract DeploysUSDBTestnet is Script {
     function launch() public {
@@ -55,25 +54,6 @@ contract DeploysUSDBOftAdapterTestnet is Script {
         
         vm.startBroadcast(deployerPrivateKey);
         sUSDbOFTAdapter _oftAdapter = new sUSDbOFTAdapter(token, lzEndpoint, owner);
-        vm.stopBroadcast();
-
-        console.log(
-            "contract deployed on with address: ",
-            address(_oftAdapter)
-        );
-    }
-}
-
-contract DeployBondlinkLayerZeroAdapter is Script {
-    function launch() public {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
-        IBridgeToken bridgeToken = IBridgeToken(0x47C4e739ac455Eb4A2Ff129b08c6504FfeB2b554);
-        address lzEndpoint = 0x6EDCE65403992e310A62460808c4b910D972f10f;
-        address owner = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
-        
-        vm.startBroadcast(deployerPrivateKey);
-        BondlinkLayerZeroAdapter _oftAdapter = new BondlinkLayerZeroAdapter(bridgeToken, lzEndpoint, owner);
         vm.stopBroadcast();
 
         console.log(
