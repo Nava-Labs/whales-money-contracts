@@ -2,8 +2,8 @@
 pragma solidity ^0.8.21;
 
 import "forge-std/Script.sol";
-import { console2 } from "forge-std/console2.sol";
-import { ChildUSDb } from "../src/v1/ChildUSDb.sol";
+import {console2} from "forge-std/console2.sol";
+import {ChildUSDb} from "../src/v1/ChildUSDb.sol";
 
 contract DeployChildUSDbTestnet is Script {
     function launch() public {

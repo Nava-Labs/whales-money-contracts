@@ -2,16 +2,16 @@
 pragma solidity ^0.8.21;
 
 import "forge-std/Test.sol";
-import { console2 } from "forge-std/console2.sol";
-import { StdCheats } from "forge-std/StdCheats.sol";
-import { USDb } from "../src/v1/USDb.sol";
-import { SUSDb } from "../src/v1/sUSDb.sol";
-import { SPCTPool } from "../src/v1/SPCTPool.sol";
-import { SPCTPriceOracle } from "../src/v1/SPCTPriceOracle.sol";
-import { StandardToken } from "../src/Mock/MockToken.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ISPCTPool } from "../interfaces/ISPCTPool.sol";
-import { ISPCTPriceOracle } from "../interfaces/ISPCTPriceOracle.sol";
+import {console2} from "forge-std/console2.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
+import {USDb} from "../src/v1/USDb.sol";
+import {SUSDb} from "../src/v1/sUSDb.sol";
+import {SPCTPool} from "../src/v1/SPCTPool.sol";
+import {SPCTPriceOracle} from "../src/v1/SPCTPriceOracle.sol";
+import {StandardToken} from "../src/Mock/MockToken.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ISPCTPool} from "../src/interfaces/ISPCTPool.sol";
+import {ISPCTPriceOracle} from "../src/interfaces/ISPCTPriceOracle.sol";
 
 import "../src/utils/SafeMath.sol";
 

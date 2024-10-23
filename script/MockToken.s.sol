@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Script.sol";
-import { console2 } from "forge-std/console2.sol";
-import { StandardToken } from "../src/Mock/MockToken.sol";
+import {console2} from "forge-std/console2.sol";
+import {StandardToken} from "../src/mock/MockToken.sol";
 
 contract DeployMockToken is Script {
     

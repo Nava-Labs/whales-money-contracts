@@ -2,9 +2,7 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
-import { console2 } from "forge-std/console2.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import {console2} from "forge-std/console2.sol";
 import { SPCTPool } from "../src/v1/SPCTPool.sol";
 
 contract DeploySPCTPoolTestnet is Script {

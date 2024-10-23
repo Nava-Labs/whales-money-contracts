@@ -2,13 +2,11 @@
 pragma solidity ^0.8.21;
 
 import "forge-std/Script.sol";
-import { console2 } from "forge-std/console2.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { SUSDb } from "../src/v1/sUSDb.sol";
-import { RewardDistributor } from "../src/v1/RewardDistributor.sol";
-import { USDbFlat } from "../src/v1/USDbFlat.sol";
-
-
+import {console2} from "forge-std/console2.sol";
+import {IERC20,SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {SUSDb} from "../src/v1/sUSDb.sol";
+import {RewardDistributor} from "../src/v1/RewardDistributor.sol";
+import {USDbFlat} from "../src/v1/USDbFlat.sol";
 
 contract DeploysUSDBTestnet is Script {
     function launch() public {
@@ -32,7 +30,6 @@ contract DeploysUSDBTestnet is Script {
 
     function launchRewardDistributor(address usdbAddress, address susdbAddress) public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        
         
         vm.startBroadcast(deployerPrivateKey);
         RewardDistributor _rewardDistributor = new RewardDistributor(usdbAddress, susdbAddress);
