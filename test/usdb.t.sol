@@ -7,7 +7,7 @@ import {StdCheats} from "forge-std/StdCheats.sol";
 import {USDb} from "../src/core/USDb.sol";
 import {SUSDb} from "../src/core/sUSDb.sol";
 import {SPCTPool} from "../src/core/SPCTPool.sol";
-import {SPCTPriceOracle} from "../src/core/SPCTPriceOracle.sol";
+import {SPCTPriceOracle} from "../src/core/oracle/SPCTPriceOracle.sol";
 import {StandardToken} from "../src/Mock/MockToken.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISPCTPool} from "../src/interfaces/ISPCTPool.sol";

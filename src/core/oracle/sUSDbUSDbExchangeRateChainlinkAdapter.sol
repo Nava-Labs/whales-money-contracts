@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import { IsUSDb } from "../interfaces/IsUSDb.sol";
-import { MinimalAggregatorV3Interface } from "../interfaces/MinimalAggregatorV3Interface.sol";
+import { IsUSDb } from "../../interfaces/IsUSDb.sol";
+import { MinimalAggregatorV3Interface } from "../../interfaces/MinimalAggregatorV3Interface.sol";
 
 /// @title sUSDbUSDbExchangeRateChainlinkAdapter
 /// @author Morpho Labs (modified from WstEthStEthExchangeRateChainlinkAdapter)

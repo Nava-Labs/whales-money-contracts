@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-import {IBridgeToken} from "../interfaces/IBridgeToken.sol";
+import {IBridgeToken} from "../../interfaces/IBridgeToken.sol";
 import {IOFT,OFTCore} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTCore.sol";
 
 /**

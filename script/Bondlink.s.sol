@@ -8,7 +8,7 @@ import {USDb} from "../src/core/USDb.sol";
 import {SUSDb} from "../src/core/sUSDb.sol";
 import {USDbFlat} from "../src/core/USDbFlat.sol";
 import {SPCTPool} from "../src/core/SPCTPool.sol";
-import {SPCTPriceOracle} from "../src/core/SPCTPriceOracle.sol";
+import {SPCTPriceOracle} from "../src/core/oracle/SPCTPriceOracle.sol";
 import {ISPCTPool} from "../src/interfaces/ISPCTPool.sol";
 import {ISPCTPriceOracle} from "../src/interfaces/ISPCTPriceOracle.sol";
 

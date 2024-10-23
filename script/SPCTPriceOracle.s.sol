@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import "forge-std/Script.sol";
 import { console2 } from "forge-std/console2.sol";
-import { SPCTPriceOracle } from "../src/core/SPCTPriceOracle.sol";
+import { SPCTPriceOracle } from "../src/core/oracle/SPCTPriceOracle.sol";
 
 contract DeploySPCTPriceOracleTestnet is Script {
     function launch() public {

@@ -7,13 +7,13 @@ import "@chainlink/contracts/src/v0.8/shared/token/ERC677/OpStackBurnMintERC677.
 /**
  * @title Child version sUSDb for Bondlink protocol. (for bridging)
  */
-contract ChildsUSDbV2 is OpStackBurnMintERC677 {
+contract ChildsUSDb is OpStackBurnMintERC677 {
     using SafeERC20 for IERC20;
 
     constructor(
         address l1Token,
         address l2Bridge
-    ) OpStackBurnMintERC677("Staked USDz", "sUSDz", 18, 0, l1Token, l2Bridge) {}
+    ) OpStackBurnMintERC677("Staked USDb", "sUSDb", 18, 0, l1Token, l2Bridge) {}
 
     /**
      * @notice Rescue ERC20 tokens locked up in this contract.
