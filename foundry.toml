@@ -12,6 +12,7 @@ remappings = [
     'solidity-bytes-utils/=lib/solidity-bytes-utils/',
     '@chainlink/=lib/chainlink/'
 ]
+evm_version = 'shanghai'
 
 [rpc_endpoints]
 baseSepolia = "${BASE_SEPOLIA_RPC_URL}"
