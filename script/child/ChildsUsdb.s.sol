@@ -26,10 +26,10 @@ contract DeployChildUSDbTestnet is Script {
 }
 
 contract DeployBondlinkLayerZeroAdapter is Script {
-    function launch() public {
+    function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
-        IBridgeToken bridgeToken = IBridgeToken(0x47C4e739ac455Eb4A2Ff129b08c6504FfeB2b554);
+        IBridgeToken bridgeToken = IBridgeToken(0xc2594A133589e40Baeb34D8985F24499E54d9C17);
         address lzEndpoint = 0x6EDCE65403992e310A62460808c4b910D972f10f;
         address owner = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
         
