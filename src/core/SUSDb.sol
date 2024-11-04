@@ -43,6 +43,8 @@ contract SUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     event YieldReceived(uint256 indexed amount);
     event CDPeriodChanged(uint256 indexed newCDPeriod);
     event VestingPeriodChanged(uint256 indexed newCDPeriod);
+    event CDUnstake(address indexed user, uint256 indexed amount, uint256 indexed unstakeEndedAt);
+    event Unstake(address indexed user, uint256 indexed amount);
 
     constructor(address _admin, IERC20 _asset, uint24 _CDPeriod)
         ERC20("Staked USDb", "sUSDb")
@@ -162,6 +164,8 @@ contract SUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
         userCD.amount = 0;
 
         flat.withdraw(msg.sender, amountToWithdraw);
+
+        emit Unstake(msg.sender, amountToWithdraw);
     }
 
     /**
@@ -173,10 +177,13 @@ contract SUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
 
         _shares = previewWithdraw(_assets);
 
-        CD[msg.sender].time = block.timestamp + CDPeriod;
+        uint256 unstakeEndedAt = block.timestamp + CDPeriod;
+        CD[msg.sender].time = unstakeEndedAt;
         CD[msg.sender].amount += _assets;
 
         _withdraw(msg.sender, address(flat), msg.sender, _assets, _shares);
+
+        emit CDUnstake(msg.sender, _assets, unstakeEndedAt);
     }
 
     /**
@@ -188,10 +195,13 @@ contract SUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
 
         _assets = previewRedeem(_shares);
 
-        CD[msg.sender].time = block.timestamp + CDPeriod;
+        uint256 unstakeEndedAt = block.timestamp + CDPeriod;
+        CD[msg.sender].time = unstakeEndedAt;
         CD[msg.sender].amount += _assets;
 
         _withdraw(msg.sender, address(flat), msg.sender, _assets, _shares);
+
+        emit CDUnstake(msg.sender, _assets, unstakeEndedAt);
     }
 
     function getUnvestedAmount() public view returns (uint256) {
