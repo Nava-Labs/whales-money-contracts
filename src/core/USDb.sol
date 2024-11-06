@@ -5,7 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20,SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import {ECDSA, ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {OFT} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
 import {SafeMath} from "../utils/SafeMath.sol";
 import {ISPCTPool} from "../interfaces/ISPCTPool.sol";
@@ -61,6 +61,8 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     ISPCTPool public immutable spct;
     // Price oracle
     ISPCTPriceOracle public oracle;
+    // Signer Address
+    address public signerAddress;
 
     /**
      * @dev Blacklist.
@@ -84,7 +86,15 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 
-    constructor(address _admin, address _endpoint, IERC20 _usdc, ISPCTPool _spct, ISPCTPriceOracle _oracle, uint24 _cdPeriod)
+    constructor(
+        address _admin, 
+        address _endpoint, 
+        IERC20 _usdc, 
+        ISPCTPool _spct, 
+        ISPCTPriceOracle _oracle, 
+        uint24 _cdPeriod, 
+        address _signerAddress
+    )
         OFT("USDb", "USDb", _endpoint, _admin)
         ERC20Permit("USDb")
         Ownable(_admin)
@@ -94,6 +104,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         spct = _spct;
         oracle = _oracle;
         CDPeriod = _cdPeriod;
+        signerAddress = _signerAddress;
     }
 
     // @dev Sets an implicit cap on the amount of tokens, over uint64.max() will need some sort of outbound cap / totalSupply cap
@@ -107,6 +118,19 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
     modifier checkCollateralRate() {
         _checkCollateralRate();
+        _;
+    }
+
+    modifier isValidSignature(bytes calldata signature) {
+        require(
+            signerAddress == _recoverToAddress(
+                address(this),
+                msg.sender,
+                _useNonce(msg.sender),
+                signature
+            ),
+            "INVALID_SIGNATURE"
+        );
         _;
     }
 
@@ -240,7 +264,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
      *
      * @param _amount the amount of USDb.
      */
-    function cdRedeem(uint256 _amount) external whenNotPaused checkCollateralRate {
+    function cdRedeem(uint256 _amount, bytes calldata _signature) external whenNotPaused checkCollateralRate isValidSignature(_signature) {
         require(_amount > 0, "REDEEM_AMOUNT_IS_ZERO");
         require(!_blacklist[msg.sender], "RECIPIENT_IN_BLACKLIST");
 
@@ -320,7 +344,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
      * @notice Used to claim USDC after CD has finished.
      * @dev Works on both mode.
      */
-    function redeem() external {
+    function redeem(bytes calldata _signature) external isValidSignature(_signature) {
         UserCD storage userCD = _userCD[msg.sender];
         require(block.timestamp >= userCD.time || CDPeriod == 0, "UNSTAKE_FAILED");
 
@@ -573,4 +597,59 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         }
         token.safeTransfer(to, amount);
     }
+
+    /* -------------------------------------------------------------------------- */
+    /*                             SignatureVerification                          */
+    /* -------------------------------------------------------------------------- */
+
+    function _hash(address contractAddress, address account, uint256 nonce) 
+        internal 
+        view 
+        returns (bytes32) 
+    {
+        return
+            _hashTypedDataV4(
+                keccak256(
+                    abi.encode(
+                        keccak256(
+                          "DBI(address contractAddress,address account,uint256 nonce)"
+                        ),
+                        contractAddress,
+                        account,
+                        nonce
+                    )
+                )
+            );
+    }
+
+    function _recoverToAddress(
+        address contractAddress, 
+        address account, 
+        uint256 nonce,
+        bytes calldata signature
+    ) 
+        internal
+        view 
+        returns(address) 
+    {
+        return ECDSA.recover(_hash(contractAddress, account, nonce), signature);
+    }
+
+    function checkRecoverAddress(
+        address contractAddress, 
+        address account,
+        uint256 nonce,
+        bytes calldata signature
+    )
+        public
+        view
+        returns (address)
+    {
+        return _recoverToAddress(contractAddress, account, nonce, signature);
+    }    
+
+    function setSignerAddress(address _signerAddress) external onlyOwner {
+        signerAddress = _signerAddress;
+    }
+
 }

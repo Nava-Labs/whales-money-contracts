@@ -20,6 +20,7 @@ contract DeployBondlinkTestnet is Script {
         address feeRecipient = 0x68E76Ec846501527d08B27BC9259b70f5E590AF6;
         address treasury = 0x904275b0bB34dc3d48A05ae65DF0Bdeb825E751f;
         address endpoint = 0x6EDCE65403992e310A62460808c4b910D972f10f;
+        address signerAddress = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
         IERC20 usdc = IERC20(0x0fbbE1770F92eD1ef5B951d575cE81B6F80bBeb2);
         uint24 cdPeriod = 300;
        
@@ -31,7 +32,7 @@ contract DeployBondlinkTestnet is Script {
         _spctPool.grantRole(keccak256("POOL_MANAGER_ROLE"), admin);
         _spctPool.setFeeRecipient(feeRecipient);
         // USDb
-        USDb _usdb = new USDb(admin, endpoint, usdc, ISPCTPool(address(_spctPool)), ISPCTPriceOracle(address(_oracle)), cdPeriod);
+        USDb _usdb = new USDb(admin, endpoint, usdc, ISPCTPool(address(_spctPool)), ISPCTPriceOracle(address(_oracle)), cdPeriod, signerAddress);
         _usdb.grantRole(keccak256("POOL_MANAGER_ROLE"), admin);
         _usdb.setFeeRecipient(feeRecipient);
         _usdb.setTreasury(treasury);

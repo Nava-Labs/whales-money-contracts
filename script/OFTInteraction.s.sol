@@ -76,14 +76,14 @@ contract OFTInteraction is Script {
         ExecutorConfig memory executorConfig = ExecutorConfig({
             maxMessageSize: 100000,
             // https://docs.layerzero.network/v2/developers/evm/technical-reference/deployed-contracts (LZ Executor)
-            executor: 0x8A3D588D9f6AC041476b094f97FF94ec30169d3D // Base sepolia
+            executor: 0x5Df3a1cEbBD9c8BA7F8dF51Fd632A9aef8308897// Base sepolia
         });
 
         // SEE: https://docs.layerzero.network/v2/developers/evm/technical-reference/dvn-addresses
         // NOTES: DVNs MUST MATCH between SEND CONFIG AND RECEIVE CONFIG
         address[] memory chosenDVNs = new address[](2);
-        chosenDVNs[0] = 0xe1a12515F9AB2764b887bF60B923Ca494EBbB2d6; // L0 DVN should be number one
-        chosenDVNs[1] = 0xfa1a1804eFFeC9000F75CD15d16d18B05738d467; 
+        chosenDVNs[1] = 0x53f488E93b4f1b60E8E83aa374dBe1780A1EE8a8; // L0 DVN should be number one
+        chosenDVNs[0] = 0x0Fbb88Ff8d38cD1E917149CD14076852f13E088E; 
 
         UlnConfig memory ulnConfig = UlnConfig({
             confirmations: 5,
@@ -125,8 +125,8 @@ contract OFTInteraction is Script {
         // SEE: https://docs.layerzero.network/v2/developers/evm/technical-reference/dvn-addresses
         // NOTES: DVNs MUST MATCH between SEND CONFIG AND RECEIVE CONFIG
         address[] memory chosenDVNs = new address[](2);
-        chosenDVNs[0] = 0x0eE552262f7B562eFcED6DD4A7e2878AB897d405;
-        chosenDVNs[1] = 0x16b711e3284E7C1d3b7EEd25871584AD8D946cAC;
+        chosenDVNs[0] = 0xe1a12515F9AB2764b887bF60B923Ca494EBbB2d6;
+        chosenDVNs[1] = 0xfa1a1804eFFeC9000F75CD15d16d18B05738d467;
 
         UlnConfig memory ulnConfig = UlnConfig({
             confirmations: 5,
