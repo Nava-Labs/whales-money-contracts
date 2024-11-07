@@ -17,7 +17,11 @@ contract sUSDbUSDbExchangeRateChainlinkAdapter is MinimalAggregatorV3Interface {
     string public constant description = "sUSDb/USDb exchange rate";
 
     /// @notice The address of sUSDb on Ethereum.
-    IsUSDb public constant sUSDb = IsUSDb(0x547213367cfB08ab418E7b54d7883b2C2AA27Fd7);
+    IsUSDb public immutable sUSDb;
+
+    constructor(address _sUSDb) {
+        sUSDb = IsUSDb(_sUSDb);
+    }
 
     /// @dev Returns zero for roundId, startedAt, updatedAt and answeredInRound.
     /// @dev Silently overflows if `convertToAssets`'s return value is greater than `type(int256).max`.
