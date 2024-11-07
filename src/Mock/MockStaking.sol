@@ -94,8 +94,11 @@ contract MockStakingHop3 {
         usdb = IERC20(_usdb);
     }
 
-
     function hop(uint256 amount) external {
         IERC20(usdb).transferFrom(msg.sender, address(this), amount);
+    }
+
+    function claim(uint256 amount) external {
+        IERC20(usdb).transfer(msg.sender, amount);
     }
 }
