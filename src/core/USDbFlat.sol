@@ -15,12 +15,12 @@ contract USDbFlat {
         usdb = _usdb;
     }
 
-    modifier onlysUSDb() {
+    modifier onlySUSDb() {
         require(msg.sender == susdb, "CAN_ONLY_CALLED_BY_SUSDB");
         _;
     }
 
-    function withdraw(address _to, uint256 _amount) external onlysUSDb {
+    function withdraw(address _to, uint256 _amount) external onlySUSDb {
         usdb.transfer(_to, _amount);
     }
 }
