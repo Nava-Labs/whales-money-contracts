@@ -9,7 +9,7 @@ contract DeployMockStaking is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        address usdb = 0xe42c7D8eD302e12BD5E36c34bfc34188Abc9670f;
+        address usdb = 0xE70b4B2BD4026D8E286F52cf45Ab71F04CD50EFA;
 
         MockStakingDirect _mock1 = new MockStakingDirect(
             usdb
