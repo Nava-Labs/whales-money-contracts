@@ -57,7 +57,8 @@ contract UsdbTest is StdCheats, Test {
     // Deploy USDB
     uint24 CDPeriod = 3 days;
     address endpointLayerZero = 0x6EDCE65403992e310A62460808c4b910D972f10f;
-    usdb = new USDb(owner, endpointLayerZero, IERC20(address(usdc)), ISPCTPool(address(spct)), ISPCTPriceOracle(address(oracle)), CDPeriod);
+    address signerAddress = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
+    usdb = new USDb(owner, endpointLayerZero, IERC20(address(usdc)), ISPCTPool(address(spct)), ISPCTPriceOracle(address(oracle)), CDPeriod, signerAddress);
     // Deploy sUSDB
     susdb = new SUSDb(owner, IERC20(address(usdb)), CDPeriod);
 
