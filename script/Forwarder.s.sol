@@ -13,7 +13,8 @@ contract ForwarderScript is Script {
 
         address _owner = 0x62507d7B6d8428DA9F8D337B5aE59c115340D049;
         address _usdc = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
-        Forwarder _forwarder = new Forwarder(_owner,_usdc);
+        address _usdb = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
+        Forwarder _forwarder = new Forwarder(_owner,_usdc, _usdb);
 
         vm.stopBroadcast();
         
