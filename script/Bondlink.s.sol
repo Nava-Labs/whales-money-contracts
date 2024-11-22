@@ -47,6 +47,7 @@ contract DeployBondlinkTestnet is Script {
         _spctPool.setUsdbAddress(address(_usdb));
         // Reward Distributor
         RewardDistributor _rewardDistributor = new RewardDistributor(address(_usdb), address(_susdb));
+        _susdb.grantRole(keccak256("YIELD_MANAGER_ROLE"), address(_rewardDistributor));
         sUSDbUSDbExchangeRateChainlinkAdapter _sUSDbOrcale = new sUSDbUSDbExchangeRateChainlinkAdapter(address(_susdb)); 
         vm.stopBroadcast();
 
