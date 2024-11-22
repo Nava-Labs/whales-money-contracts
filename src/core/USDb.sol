@@ -612,7 +612,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
                 keccak256(
                     abi.encode(
                         keccak256(
-                          "DBI(address contractAddress,address account,uint256 nonce)"
+                          "Bondlink(address contractAddress,address account,uint256 nonce)"
                         ),
                         contractAddress,
                         account,
@@ -648,8 +648,9 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         return _recoverToAddress(contractAddress, account, nonce, signature);
     }    
 
-    function setSignerAddress(address _signerAddress) external onlyOwner {
+    function setSignerAddress(address _signerAddress) external onlyRole(POOL_MANAGER_ROLE) {
         signerAddress = _signerAddress;
     }
 
+    /* --------------------------- End of SignatureVerification -------------------------- */
 }
