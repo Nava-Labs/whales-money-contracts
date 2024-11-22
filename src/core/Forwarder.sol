@@ -10,10 +10,16 @@ error ZeroUSDCDropped();
 error FailedWithdrawETH();
 error FailedWithdrawERC20();
 
+interface IUSDB {
+    function deposit(address receiver, uint256 _amount) external;
+}
+
 contract Forwarder is Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable USDC;
+
+    address public usdb;
 
     mapping(address => bool) public whitelisted;
 
@@ -22,8 +28,9 @@ contract Forwarder is Ownable {
         _;
     }
 
-    constructor(address _owner, address _usdc) Ownable(_owner) {
+    constructor(address _owner, address _usdc, address _usdb) Ownable(_owner) {
         USDC = IERC20(_usdc);
+        usdb = _usdb;
     }
 
     function dropUSDCandContinue(
@@ -46,8 +53,8 @@ contract Forwarder is Ownable {
         uint256 usdcBalanceAfterCall = USDC.balanceOf(address(this));
         if(usdcBalanceAfterCall <= usdcBalanceBeforeCall) revert ZeroUSDCDropped(); 
 
-
-        // TODO: DEPOSIT USDb
+        // use usdcBalanceAfterCall, to make sure no leftover USDC after operation
+        IUSDB(usdb).deposit(msg.sender, usdcBalanceAfterCall);
     }
 
     function addToWhitelist(address _address) external onlyOwner {
@@ -56,6 +63,10 @@ contract Forwarder is Ownable {
 
     function removeFromWhitelist(address _address) external onlyOwner {
         whitelisted[_address] = false;
+    }
+
+    function setUSDBAddress(address _usdb) external onlyOwner {
+        usdb = _usdb;
     }
 
     function withdrawETH(address _receiver) external onlyOwner {
