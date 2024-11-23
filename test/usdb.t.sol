@@ -13,10 +13,13 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ISPCTPool} from "../src/interfaces/ISPCTPool.sol";
 import {ISPCTPriceOracle} from "../src/interfaces/ISPCTPriceOracle.sol";
 
-import "../src/utils/SafeMath.sol";
+import {SafeMath} from "../src/utils/SafeMath.sol";
+import {SigUtils} from "./SigUtils.sol";
 
 contract UsdbTest is StdCheats, Test {
   using SafeMath for uint256;
+  SigUtils internal sigUtils;
+
   USDb internal usdb;
   SUSDb internal susdb;
   SPCTPool internal spct;
@@ -76,6 +79,9 @@ contract UsdbTest is StdCheats, Test {
     spct.addToWhitelist(address(usdb));
     spct.setUsdbAddress(address(usdb));
     vm.stopPrank();
+
+
+    sigUtils = new SigUtils(usdb.DOMAIN_SEPARATOR());
   }
 
   function testUsdbMintRedeemSuccess() public {
@@ -582,14 +588,16 @@ contract UsdbTest is StdCheats, Test {
   }
 
   function _cdRedeemUSDb(address _who, uint256 _amount) internal {
+    bytes memory _signature = _getSignature(_who);
     vm.startPrank(_who);
-    usdb.cdRedeem(_amount);
+    usdb.cdRedeem(_amount, _signature);
     vm.stopPrank();
   }
 
   function _redeemUSDb(address _who) internal {
+    bytes memory _signature = _getSignature(_who);
     vm.startPrank(_who);
-    usdb.redeem();
+    usdb.redeem(_signature);
     vm.stopPrank();
   }
 
@@ -600,5 +608,19 @@ contract UsdbTest is StdCheats, Test {
     vm.stopPrank();
   }
 
+  function _getSignature(address _who) internal returns (bytes memory) {
+    uint256 _signerKey = vm.envUint("PRIVATE_KEY");
+    vm.startPrank(_who);
+    uint256 nonce = usdb.nonces(_who);
+    SigUtils.Bondlink memory bondlink = SigUtils.Bondlink({
+            contractAddress: address(usdb),
+            account: _who,
+            nonce: nonce
+    });
+    bytes32 digest = sigUtils.getTypedDataHash(bondlink);
+    (uint8 v, bytes32 r, bytes32 s) = vm.sign(_signerKey, digest);
+    bytes memory signature = abi.encodePacked(r, s, v);
+    return signature;
+  }
 
 }
