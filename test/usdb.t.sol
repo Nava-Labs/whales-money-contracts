@@ -355,7 +355,7 @@ contract UsdbTest is StdCheats, Test {
     assertEq(spct.balanceOf(address(usdb)), 0 ether);
   }
 
-  function testStackingSuccess() public {
+  function testStakingSuccess() public {
     // mint usdb
     uint256 mintValue = 100 ether;
     uint256 mintValueInDecimals6 = _convertToDecimals6(mintValue);
@@ -403,7 +403,7 @@ contract UsdbTest is StdCheats, Test {
     assertEq(usdb.balanceOf(alice), mintValue);
   }
 
-  function testStackingSuccessAndYield() public {
+  function testStakingSuccessAndYield() public {
     // manager mint usdb for yield
     uint256 managerMintValue = 1000 ether;
     _mintUSDb(manager, _convertToDecimals6(managerMintValue));
@@ -425,7 +425,7 @@ contract UsdbTest is StdCheats, Test {
     _mintUSDb(bobby, bobbyMintValueInDecimals6);
     assertEq(usdb.balanceOf(bobby), bobbyMintValue);
 
-    // -------- Start Stacking --------
+    // -------- Start Staking --------
     // alice stake usdb
     _stakeUsdb(alice, aliceMintValue);
     assertEq(usdb.balanceOf(alice), 0);
