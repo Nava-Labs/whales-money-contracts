@@ -8,7 +8,7 @@ import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20P
 import {OFT} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
 
 /**
- * @title Child version USDb for Anzen protocol. (for bridging)
+ * @title Child version USDb for Bondlink protocol. (for bridging)
  */
 contract ChildUSDb is OFT, ERC20Permit, Pausable {
     using SafeERC20 for IERC20;
