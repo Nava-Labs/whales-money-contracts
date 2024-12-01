@@ -14,7 +14,9 @@ contract ForwarderScript is Script {
         address _owner = 0x62507d7B6d8428DA9F8D337B5aE59c115340D049;
         address _usdc = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
         address _usdb = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
+        
         Forwarder _forwarder = new Forwarder(_owner,_usdc, _usdb);
+        console2.log("Forwarder deployed on with address: ", address(_forwarder));
 
         vm.stopBroadcast();
         
@@ -53,7 +55,7 @@ contract ForwarderScript is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        Forwarder(_forwarder).dropUSDCandContinue{value: _ethValueInWei}(
+        Forwarder(_forwarder).dropUSDCandDeposit{value: _ethValueInWei}(
             _to, 
             _isNative,
             _token,

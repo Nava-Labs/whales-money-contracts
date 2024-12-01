@@ -18,10 +18,18 @@ contract Forwarder is Ownable {
     using SafeERC20 for IERC20;
 
     IERC20 public immutable USDC;
-
-    address public usdb;
-
+    address public immutable USDB;
     mapping(address => bool) public whitelisted;
+
+    event DropUSDCandDeposit(
+        address indexed initiator, 
+        address indexed to, 
+        bool isNative, 
+        uint256 ethValue, 
+        address token, 
+        uint256 tokenAmount
+    );
+    event Whitelisted(address indexed user, bool isWhitelisted);
 
     modifier onlyWhitelisted(address _to) {
         if(!whitelisted[_to]) revert NotWhitelisted();
@@ -30,10 +38,13 @@ contract Forwarder is Ownable {
 
     constructor(address _owner, address _usdc, address _usdb) Ownable(_owner) {
         USDC = IERC20(_usdc);
-        usdb = _usdb;
+        USDB = _usdb;
+
+        // Max approve usdc to usdb contract
+        _approve(_usdc, _usdb, type(uint256).max);    
     }
 
-    function dropUSDCandContinue(
+    function dropUSDCandDeposit(
         address payable _to, 
         bool _isNative,
         address _token,
@@ -54,19 +65,19 @@ contract Forwarder is Ownable {
         if(usdcBalanceAfterCall <= usdcBalanceBeforeCall) revert ZeroUSDCDropped(); 
 
         // use usdcBalanceAfterCall, to make sure no leftover USDC after operation
-        IUSDB(usdb).deposit(msg.sender, usdcBalanceAfterCall);
+        IUSDB(USDB).deposit(msg.sender, usdcBalanceAfterCall);
+
+        emit DropUSDCandDeposit(msg.sender, _to, _isNative, msg.value, _token, _tokenAmount);
     }
 
     function addToWhitelist(address _address) external onlyOwner {
         whitelisted[_address] = true;
+        emit Whitelisted(_address, true);
     }
 
     function removeFromWhitelist(address _address) external onlyOwner {
         whitelisted[_address] = false;
-    }
-
-    function setUSDBAddress(address _usdb) external onlyOwner {
-        usdb = _usdb;
+        emit Whitelisted(_address, false);
     }
 
     function withdrawETH(address _receiver) external onlyOwner {

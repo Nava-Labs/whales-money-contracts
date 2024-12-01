@@ -76,14 +76,14 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     event Redeem(address indexed user, uint256 indexed amount);
     event Mint(address indexed user, uint256 indexed amount);
     event Burn(address indexed user, uint256 indexed amount);
-
+    event Blacklisted(address indexed user, bool isBlacklisted);
     event CDPeriodChanged(uint24 indexed newCDPeriod);
     event MintFeeRateChanged(uint256 indexed newFeeRate);
     event RedeemFeeRateChanged(uint256 indexed newFeeRate);
     event FeeRecipientChanged(address indexed newFeeRecipient);
     event TreasuryChanged(address indexed newTreasury);
+    event SignerChanged(address indexed newSigner);
     event OracleChanged(address newOracle);
-
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 
     constructor(
@@ -435,23 +435,29 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
     function addToBlacklist(address _user) external onlyRole(POOL_MANAGER_ROLE) {
         _blacklist[_user] = true;
+        emit Blacklisted(_user, true);
     }
 
     function addBatchToBlacklist(address[] calldata _users) external onlyRole(POOL_MANAGER_ROLE) {
         uint256 numUsers = _users.length;
         for (uint256 i; i < numUsers; ++i) {
-            _blacklist[_users[i]] = true;
+            address _user = _users[i];
+            _blacklist[_user] = true;
+            emit Blacklisted(_user, true);
         }
     }
 
     function removeFromBlacklist(address _user) external onlyRole(POOL_MANAGER_ROLE) {
         _blacklist[_user] = false;
+        emit Blacklisted(_user, false);
     }
 
     function removeBatchFromBlacklist(address[] calldata _users) external onlyRole(POOL_MANAGER_ROLE) {
         uint256 numUsers = _users.length;
         for (uint256 i; i < numUsers; ++i) {
-            _blacklist[_users[i]] = false;
+            address _user = _users[i];
+            _blacklist[_user] = false;
+            emit Blacklisted(_user, false);
         }
     }
 
@@ -650,6 +656,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
     function setSignerAddress(address _signerAddress) external onlyRole(POOL_MANAGER_ROLE) {
         signerAddress = _signerAddress;
+        emit SignerChanged(_signerAddress);
     }
 
     /* --------------------------- End of SignatureVerification -------------------------- */

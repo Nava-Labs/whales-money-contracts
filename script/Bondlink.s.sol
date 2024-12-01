@@ -5,7 +5,7 @@ import "forge-std/Script.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {console2} from "forge-std/console2.sol";
 import {USDb} from "../src/core/USDb.sol";
-import {SUSDb} from "../src/core/sUSDb.sol";
+import {sUSDb} from "../src/core/sUSDb.sol";
 import {USDbFlat} from "../src/core/USDbFlat.sol";
 import {SPCTPool} from "../src/core/SPCTPool.sol";
 import {SPCTPriceOracle} from "../src/core/oracle/SPCTPriceOracle.sol";
@@ -38,7 +38,7 @@ contract DeployBondlinkTestnet is Script {
         _usdb.setFeeRecipient(feeRecipient);
         _usdb.setTreasury(treasury);
         // sUSDb
-        SUSDb _susdb = new SUSDb(admin, IERC20(address(_usdb)), cdPeriod);
+        sUSDb _susdb = new sUSDb(admin, IERC20(address(_usdb)), cdPeriod);
         _susdb.grantRole(keccak256("POOL_MANAGER_ROLE"), admin);
         _susdb.grantRole(keccak256("YIELD_MANAGER_ROLE"), admin);
         // Add to whitelist

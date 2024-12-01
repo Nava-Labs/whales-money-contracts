@@ -7,7 +7,7 @@ import {ChildsUSDb} from "../../src/core/child/ChildsUSDb.sol";
 import {BondlinkLayerZeroAdapter} from "../../src/core/sUSDbLayerZeroAdapter/BondlinkLayerZeroAdapter.sol";
 import {IBridgeToken} from "../../src/core/sUSDbLayerZeroAdapter/OFTExternal.sol";
 
-contract DeployChildUSDbTestnet is Script {
+contract DeployChildsUSDbTestnet is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
@@ -15,12 +15,12 @@ contract DeployChildUSDbTestnet is Script {
         address l2Bridge = 0x531ef787DE4D22e5b12Db6585Ef877992C973b06;
         
         vm.startBroadcast(deployerPrivateKey);
-        ChildsUSDb _childsUsdb = new ChildsUSDb(l1Token, l2Bridge);
+        ChildsUSDb _childsUDBb = new ChildsUSDb(l1Token, l2Bridge);
         vm.stopBroadcast();
 
         console.log(
             "contract deployed on with address: ",
-            address(_childsUsdb)
+            address(_childsUDBb)
         );
     }
 }

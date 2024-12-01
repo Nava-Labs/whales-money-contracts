@@ -14,6 +14,7 @@ contract DeployMockStaking is Script {
         MockStakingDirect _mock1 = new MockStakingDirect(
             usdb
         );
+        console2.log("Mock1 deployed on with address: ", address(_mock1));
 
         address[] memory target = new address[](3);
         target[0] = 0xD76e2A1c4a1EB7328c742479F7D92847C493c986;
@@ -24,6 +25,7 @@ contract DeployMockStaking is Script {
             usdb,
             target
         );
+        console2.log("Mock0 deployed on with address: ", address(_mock0));
 
         MockStakingHop3 _hop3 = new MockStakingHop3(
             usdb
@@ -38,6 +40,7 @@ contract DeployMockStaking is Script {
             usdb,
             address(_hop2)
         );
+        console2.log("MockHop1 deployed on with address: ", address(_hop1));
 
         vm.stopBroadcast();
     }

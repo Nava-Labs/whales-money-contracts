@@ -252,7 +252,8 @@ contract OFTInteraction is Script {
         // IF ENFORCED, we can just passing empty bytes and will use the enforced gas limit
         // IF ENFORCED and we pass `options`, it will `send` with enforcedGasLimit + optionsGasLimit
         bytes memory optionsType3 = OptionsBuilder.newOptions();
-        bytes memory options = OptionsBuilder.addExecutorLzReceiveOption(optionsType3, 20000, 0);
+        OptionsBuilder.addExecutorLzReceiveOption(optionsType3, 20000, 0);
+        
         SendParam memory sendParam = SendParam(
             _eid, 
             recipientAddress, 

@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import {console2} from "forge-std/console2.sol";
 import {StdCheats} from "forge-std/StdCheats.sol";
 import {USDb} from "../src/core/USDb.sol";
-import {SUSDb} from "../src/core/sUSDb.sol";
+import {sUSDb} from "../src/core/sUSDb.sol";
 import {SPCTPool} from "../src/core/SPCTPool.sol";
 import {SPCTPriceOracle} from "../src/core/oracle/SPCTPriceOracle.sol";
 import {StandardToken} from "../src/Mock/MockToken.sol";
@@ -16,12 +16,12 @@ import {ISPCTPriceOracle} from "../src/interfaces/ISPCTPriceOracle.sol";
 import {SafeMath} from "../src/utils/SafeMath.sol";
 import {SigUtils} from "./SigUtils.sol";
 
-contract UsdbTest is StdCheats, Test {
+contract USDBTest is StdCheats, Test {
   using SafeMath for uint256;
   SigUtils internal sigUtils;
 
   USDb internal usdb;
-  SUSDb internal susdb;
+  sUSDb internal susdb;
   SPCTPool internal spct;
   SPCTPriceOracle internal oracle;
 
@@ -63,7 +63,7 @@ contract UsdbTest is StdCheats, Test {
     address signerAddress = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
     usdb = new USDb(owner, endpointLayerZero, IERC20(address(usdc)), ISPCTPool(address(spct)), ISPCTPriceOracle(address(oracle)), CDPeriod, signerAddress);
     // Deploy sUSDB
-    susdb = new SUSDb(owner, IERC20(address(usdb)), CDPeriod);
+    susdb = new sUSDb(owner, IERC20(address(usdb)), CDPeriod);
 
     // Grant Role
     spct.grantRole(spct.POOL_MANAGER_ROLE(), manager);

@@ -12,7 +12,7 @@ import {USDbFlat} from "./USDbFlat.sol";
 /**
  * @title Staked USDb for getting yield.
  */
-contract SUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
+contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 

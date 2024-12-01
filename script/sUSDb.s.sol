@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 import "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {IERC20,SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {SUSDb} from "../src/core/sUSDb.sol";
+import {sUSDb} from "../src/core/sUSDb.sol";
 import {RewardDistributor} from "../src/core/RewardDistributor.sol";
 import {USDbFlat} from "../src/core/USDbFlat.sol";
 import {sUSDbOFTAdapter} from "../src/core/sUSDbLayerZeroAdapter/sUSDbOFTAdapter.sol";
@@ -19,7 +19,7 @@ contract DeploysUSDBTestnet is Script {
         uint24 cdPeriod = 600;
         
         vm.startBroadcast(deployerPrivateKey);
-        SUSDb _susdb = new SUSDb(admin, asset, cdPeriod);
+        sUSDb _susdb = new sUSDb(admin, asset, cdPeriod);
         _susdb.grantRole(keccak256("POOL_MANAGER_ROLE"), admin);
         _susdb.grantRole(keccak256("YIELD_MANAGER_ROLE"), admin);
         vm.stopBroadcast();

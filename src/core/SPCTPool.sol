@@ -41,7 +41,7 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     event Redeem(address indexed user, uint256 indexed amount);
     event Execute(uint256 indexed amount);
     event Repay(uint256 indexed amount);
-
+    event Whitelisted(address indexed user, bool isWhitelisted);
     event MintFeeRateChanged(uint256 indexed newFeeRate);
     event RedeemFeeRateChanged(uint256 indexed newFeeRate);
     event FeeRecipientChanged(address newFeeRecipient);
@@ -186,6 +186,7 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
      */
     function addToWhitelist(address _user) external onlyRole(POOL_MANAGER_ROLE) {
         _permission[_user] = true;
+        emit Whitelisted(_user, true);
     }
 
     /**
@@ -196,7 +197,9 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     function addBatchToWhitelist(address[] calldata _users) external onlyRole(POOL_MANAGER_ROLE) {
         uint256 numUsers = _users.length;
         for (uint256 i; i < numUsers; ++i) {
-            _permission[_users[i]] = true;
+            address _user = _users[i];
+            _permission[_user] = true;
+            emit Whitelisted(_user, true);
         }
     }
 
@@ -207,6 +210,7 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
      */
     function removeFromWhitelist(address _user) external onlyRole(POOL_MANAGER_ROLE) {
         _permission[_user] = false;
+        emit Whitelisted(_user, false);
     }
 
     /**
@@ -217,7 +221,9 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     function removeBatchFromWhitelist(address[] calldata _users) external onlyRole(POOL_MANAGER_ROLE) {
         uint256 numUsers = _users.length;
         for (uint256 i; i < numUsers; ++i) {
-            _permission[_users[i]] = false;
+            address _user = _users[i];
+            _permission[_user] = false;
+            emit Whitelisted(_user, false);
         }
     }
 
