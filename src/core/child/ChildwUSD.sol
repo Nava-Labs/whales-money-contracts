@@ -4,12 +4,13 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20,SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {OFTAdapter} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTAdapter.sol";
+import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
+import {OFT} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
 
 /**
- * @title OFTAdapter for bridging sUSDb.
+ * @title Child version wUSD for WhalesMoney protocol. (for bridging)
  */
-contract sUSDbOFTAdapter is OFTAdapter, Pausable {
+contract ChildwUSD is OFT, ERC20Permit, Pausable {
     using SafeERC20 for IERC20;
 
     // Make owner transfer 2 step.
@@ -18,10 +19,9 @@ contract sUSDbOFTAdapter is OFTAdapter, Pausable {
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 
     constructor(
-        address _token,
-        address _lzEndpoint,
+        address _endpoint,
         address _owner // token owner used as a delegate in LayerZero Endpoint
-    ) OFTAdapter(_token, _lzEndpoint, _owner) Ownable(_owner) {}
+    ) OFT("wUSD", "wUSD", _endpoint, _owner) ERC20Permit("wUSD") Ownable(_owner) {}
 
     // @dev Sets an implicit cap on the amount of tokens, over uint64.max() will need some sort of outbound cap / totalSupply cap
     // Lowest common decimal denominator between chains.
@@ -115,8 +115,6 @@ contract sUSDbOFTAdapter is OFTAdapter, Pausable {
      * @param amount amount to withdraw.
      */
     function rescueERC20(IERC20 token, address to, uint256 amount) external onlyOwner {
-        // Inner token rescue is invalid
-        require(innerToken != token, "INVALID_RESCUE");
         token.safeTransfer(to, amount);
     }
 }

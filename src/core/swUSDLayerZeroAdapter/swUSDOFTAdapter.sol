@@ -4,12 +4,12 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20,SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IBridgeToken,OFTExternal} from "./OFTExternal.sol";
+import {OFTAdapter} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFTAdapter.sol";
 
 /**
- * @title Bondlink LayerZero Adapter
+ * @title OFTAdapter for bridging swUSD.
  */
-contract BondlinkLayerZeroAdapter is OFTExternal, Pausable {
+contract swUSDOFTAdapter is OFTAdapter, Pausable {
     using SafeERC20 for IERC20;
 
     // Make owner transfer 2 step.
@@ -18,10 +18,10 @@ contract BondlinkLayerZeroAdapter is OFTExternal, Pausable {
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 
     constructor(
-        IBridgeToken _bridgeToken,
-        address _endpoint,
+        address _token,
+        address _lzEndpoint,
         address _owner // token owner used as a delegate in LayerZero Endpoint
-    ) OFTExternal(_bridgeToken, _endpoint, _owner) Ownable(_owner) {}
+    ) OFTAdapter(_token, _lzEndpoint, _owner) Ownable(_owner) {}
 
     // @dev Sets an implicit cap on the amount of tokens, over uint64.max() will need some sort of outbound cap / totalSupply cap
     // Lowest common decimal denominator between chains.
@@ -115,6 +115,8 @@ contract BondlinkLayerZeroAdapter is OFTExternal, Pausable {
      * @param amount amount to withdraw.
      */
     function rescueERC20(IERC20 token, address to, uint256 amount) external onlyOwner {
+        // Inner token rescue is invalid
+        require(innerToken != token, "INVALID_RESCUE");
         token.safeTransfer(to, amount);
     }
 }

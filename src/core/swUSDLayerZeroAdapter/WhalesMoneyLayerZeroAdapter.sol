@@ -4,13 +4,12 @@ pragma solidity ^0.8.21;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {IERC20,SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import {OFT} from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/OFT.sol";
+import {IBridgeToken,OFTExternal} from "./OFTExternal.sol";
 
 /**
- * @title Child version USDb for Bondlink protocol. (for bridging)
+ * @title Whales Money LayerZero Adapter
  */
-contract ChildUSDb is OFT, ERC20Permit, Pausable {
+contract WhalesMoneyLayerZeroAdapter is OFTExternal, Pausable {
     using SafeERC20 for IERC20;
 
     // Make owner transfer 2 step.
@@ -19,9 +18,10 @@ contract ChildUSDb is OFT, ERC20Permit, Pausable {
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 
     constructor(
+        IBridgeToken _bridgeToken,
         address _endpoint,
         address _owner // token owner used as a delegate in LayerZero Endpoint
-    ) OFT("USDb", "USDb", _endpoint, _owner) ERC20Permit("USDb") Ownable(_owner) {}
+    ) OFTExternal(_bridgeToken, _endpoint, _owner) Ownable(_owner) {}
 
     // @dev Sets an implicit cap on the amount of tokens, over uint64.max() will need some sort of outbound cap / totalSupply cap
     // Lowest common decimal denominator between chains.

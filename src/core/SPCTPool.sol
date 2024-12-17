@@ -9,7 +9,7 @@ import {ERC20,ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/
 import "../utils/SafeMath.sol";
 
 /**
- * @title Whitelist Private Credit ERC20-like token for Bondlink protocol.
+ * @title Whitelist Private Credit ERC20-like token for WhalesMoney protocol.
  */
 contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     using SafeERC20 for IERC20;
@@ -29,8 +29,8 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     // Protocol feeRecipient should be a mulsig wallet.
     address public feeRecipient;
 
-    // Usdb address
-    address public usdb;
+    // wUSD address
+    address public wusd;
 
     /**
      * @dev SPCT only available for KYC Users.
@@ -45,7 +45,7 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     event MintFeeRateChanged(uint256 indexed newFeeRate);
     event RedeemFeeRateChanged(uint256 indexed newFeeRate);
     event FeeRecipientChanged(address newFeeRecipient);
-    event UsdbAddressChanged(address newUsdbAddress);
+    event wUSDAddressChanged(address newWusdAddress);
 
     constructor(address admin) ERC20("Secured Private Credit Token", "SPCT") ERC20Permit("SPCT") {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -53,8 +53,8 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
         _permission[address(0)] = true;
     }
 
-    modifier onlyUSDb() {
-        require(msg.sender == usdb, "CAN_ONLY_CALLED_BY_USDB");
+    modifier onlyWUSD() {
+        require(msg.sender == wusd, "CAN_ONLY_CALLED_BY_WUSD");
         _;
     }
 
@@ -78,7 +78,7 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
      *
      * @param _amount the amount of USDC
      */
-    function deposit(uint256 _amount) external whenNotPaused onlyUSDb{
+    function deposit(uint256 _amount) external whenNotPaused onlyWUSD{
         require(_amount > 0, "DEPOSIT_AMOUNT_IS_ZERO");
         
         totalPooledUSD = totalPooledUSD.add(_amount);
@@ -121,7 +121,7 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
      *
      * @param _amount the amount of SPCT.
      */
-    function redeem(uint256 _amount) external whenNotPaused onlyUSDb {
+    function redeem(uint256 _amount) external whenNotPaused onlyWUSD {
         require(_amount > 0, "REDEEM_AMOUNT_IS_ZERO");
 
         // Due to different precisions, convert it to SPCT.
@@ -261,14 +261,14 @@ contract SPCTPool is ERC20Permit, AccessControl, Pausable {
     }
 
     /**
-     * @notice usdb address.
+     * @notice wusd address.
      *
-     * @param newUsdbAddress new usdb address.
+     * @param newWusdAddress new wusd address.
      */
-    function setUsdbAddress(address newUsdbAddress) external onlyRole(POOL_MANAGER_ROLE) {
-        require(newUsdbAddress != address(0), "SET_UP_TO_ZERO_ADDR");
-        usdb = newUsdbAddress;
-        emit UsdbAddressChanged(usdb);
+    function setwUSDAddress(address newWusdAddress) external onlyRole(POOL_MANAGER_ROLE) {
+        require(newWusdAddress != address(0), "SET_UP_TO_ZERO_ADDR");
+        wusd = newWusdAddress;
+        emit wUSDAddressChanged(wusd);
     }
 
     /**

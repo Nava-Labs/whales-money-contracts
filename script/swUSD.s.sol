@@ -4,13 +4,13 @@ pragma solidity ^0.8.21;
 import "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
 import {IERC20,SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {sUSDb} from "../src/core/sUSDb.sol";
+import {swUSD} from "../src/core/swUSD.sol";
 import {RewardDistributor} from "../src/core/RewardDistributor.sol";
-import {USDbFlat} from "../src/core/USDbFlat.sol";
-import {sUSDbOFTAdapter} from "../src/core/sUSDbLayerZeroAdapter/sUSDbOFTAdapter.sol";
-import {BondlinkLayerZeroAdapter} from "../src/core/sUSDbLayerZeroAdapter/BondlinkLayerZeroAdapter.sol";
+import {wUSDFlat} from "../src/core/wUSDFlat.sol";
+import {swUSDOFTAdapter} from "../src/core/swUSDLayerZeroAdapter/swUSDOFTAdapter.sol";
+import {WhalesMoneyLayerZeroAdapter} from "../src/core/swUSDLayerZeroAdapter/WhalesMoneyLayerZeroAdapter.sol";
 
-contract DeploysUSDBTestnet is Script {
+contract DeployswUSDTestnet is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
@@ -19,19 +19,19 @@ contract DeploysUSDBTestnet is Script {
         uint24 cdPeriod = 600;
         
         vm.startBroadcast(deployerPrivateKey);
-        sUSDb _susdb = new sUSDb(admin, asset, cdPeriod);
-        _susdb.grantRole(keccak256("POOL_MANAGER_ROLE"), admin);
-        _susdb.grantRole(keccak256("YIELD_MANAGER_ROLE"), admin);
+        swUSD _swusd = new swUSD(admin, asset, cdPeriod);
+        _swusd.grantRole(keccak256("POOL_MANAGER_ROLE"), admin);
+        _swusd.grantRole(keccak256("YIELD_MANAGER_ROLE"), admin);
         vm.stopBroadcast();
 
         console.log(
             "contract deployed on with address: ",
-            address(_susdb)
+            address(_swusd)
         );
     }
 }
 
-contract DeploysUSDBOftAdapterTestnet is Script {
+contract DeployswUSDOftAdapterTestnet is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
@@ -40,7 +40,7 @@ contract DeploysUSDBOftAdapterTestnet is Script {
         address owner = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
         
         vm.startBroadcast(deployerPrivateKey);
-        sUSDbOFTAdapter _oftAdapter = new sUSDbOFTAdapter(token, lzEndpoint, owner);
+        swUSDOFTAdapter _oftAdapter = new swUSDOFTAdapter(token, lzEndpoint, owner);
         vm.stopBroadcast();
 
         console.log(

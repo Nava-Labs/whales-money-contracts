@@ -9,10 +9,10 @@ contract DeployMockStaking is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        address usdb = 0xE70b4B2BD4026D8E286F52cf45Ab71F04CD50EFA;
+        address wusd = 0xE70b4B2BD4026D8E286F52cf45Ab71F04CD50EFA;
 
         MockStakingDirect _mock1 = new MockStakingDirect(
-            usdb
+            wusd
         );
         console2.log("Mock1 deployed on with address: ", address(_mock1));
 
@@ -22,22 +22,22 @@ contract DeployMockStaking is Script {
         target[2] = 0x000000000000000000000000000000000000dEaD;
 
         MockStakingWithRouter _mock0 = new MockStakingWithRouter(
-            usdb,
+            wusd,
             target
         );
         console2.log("Mock0 deployed on with address: ", address(_mock0));
 
         MockStakingHop3 _hop3 = new MockStakingHop3(
-            usdb
+            wusd
         );
 
         MockStakingHop2 _hop2 = new MockStakingHop2(
-            usdb,
+            wusd,
             address(_hop3)
         );
 
         MockStakingHop1 _hop1 = new MockStakingHop1(
-            usdb,
+            wusd,
             address(_hop2)
         );
         console2.log("MockHop1 deployed on with address: ", address(_hop1));

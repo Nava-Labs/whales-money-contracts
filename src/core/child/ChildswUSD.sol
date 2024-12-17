@@ -5,15 +5,15 @@ import "@chainlink/contracts/src/v0.8/vendor/openzeppelin-solidity/v4.8.3/contra
 import "@chainlink/contracts/src/v0.8/shared/token/ERC677/OpStackBurnMintERC677.sol";
 
 /**
- * @title Child version sUSDb for Bondlink protocol. (for bridging)
+ * @title Child version swUSD for WhalesMoney protocol. (for bridging)
  */
-contract ChildsUSDb is OpStackBurnMintERC677 {
+contract ChildswUSD is OpStackBurnMintERC677 {
     using SafeERC20 for IERC20;
 
     constructor(
         address l1Token,
         address l2Bridge
-    ) OpStackBurnMintERC677("Staked USDb", "sUSDb", 18, 0, l1Token, l2Bridge) {}
+    ) OpStackBurnMintERC677("Staked wUSD", "swUSD", 18, 0, l1Token, l2Bridge) {}
 
     /**
      * @notice Rescue ERC20 tokens locked up in this contract.

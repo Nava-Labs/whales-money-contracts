@@ -1,23 +1,27 @@
-# Bondlink - Anzen Finance Fork
+# Whales Money - Anzen Finance Fork
 
 ## Overview
-Bondlink is a fork of [Anzen Finance](https://docs.anzen.finance/) with significant modifications to core functionality
+
+Whales Money is a fork of [Anzen Finance](https://docs.anzen.finance/) with significant modifications to core functionality
 
 ---
 
 ## Key Modifications
 
-### USDC to USDB Conversion
-- **Direct Treasury Deposit**: USDC is sent directly to the treasury address (multisig) instead of being locked in USDB contracts.
+### USDC to WUSD Conversion
 
-### USDB to USDC Redemption
-- **Cooldown Mechanism**: Redeeming USDB back to USDC involves a cooldown period, similar to the process of converting sUSDB to USDB.
-- **Manual Approval**: The admin monitors the redemption list and transfers USDC to the USDB contract, enabling users to claim their USDC.
+- **Direct Treasury Deposit**: USDC is sent directly to the treasury address (multisig) instead of being locked in WUSD contracts.
+
+### WUSD to USDC Redemption
+
+- **Cooldown Mechanism**: Redeeming WUSD back to USDC involves a cooldown period, similar to the process of converting sWUSD to WUSD.
+- **Manual Approval**: The admin monitors the redemption list and transfers USDC to the WUSD contract, enabling users to claim their USDC.
 - **KYC Requirement**: Signatures are required for "CDRedeem" and "Redeem" processes, ensuring the user has completed KYC verification.
 
 ---
 
 ## Oracle Implementation
+
 - **Current Status**: `SPCTPriceOracle` is used as a placeholder for testing purposes.
 - **Mainnet Plans**: On mainnet, we will implement an architecture similar to Anzen's unverified oracle (`src/core/oracle/AnzenOracle`).
   - Anzen's implementation appears to hardcode the USDC value as `1` within the `getPrice()` function.
@@ -32,27 +36,31 @@ We welcome feedback on this approach.
 
 ## Omnichain Architecture
 
-### USDB Implementation
-- **Mainnet (Ethereum)**: 
-  - `USDB.sol` - Primary token contract.
-- **Other Chains**: 
-  - `ChildUSDb.sol` - Implementation for child chains.
+### WUSD Implementation
 
-### sUSDB Implementation
-*Note: An adapter is necessary as staking USDB to obtain sUSDB can only occur on Ethereum mainnet.*
 - **Mainnet (Ethereum)**:
-  - `sUSDB.sol` - Main staked USDB contract.
-  - `sUSDbOFTAdapter.sol` - LayerZero adapter for cross-chain operations.
+  - `WUSD.sol` - Primary token contract.
 - **Other Chains**:
-  - `ChildsUSDb.sol` - Child chain staked token contract.
-  - `BondlinkLayerZeroAdapter.sol` - Adapter for cross-chain communication.
+  - `ChildwUSD.sol` - Implementation for child chains.
+
+### sWUSD Implementation
+
+_Note: An adapter is necessary as staking WUSD to obtain sWUSD can only occur on Ethereum mainnet._
+
+- **Mainnet (Ethereum)**:
+  - `sWUSD.sol` - Main staked WUSD contract.
+  - `swUSDOFTAdapter.sol` - LayerZero adapter for cross-chain operations.
+- **Other Chains**:
+  - `ChildswUSD.sol` - Child chain staked token contract.
+  - `Whales MoneyLayerZeroAdapter.sol` - Adapter for cross-chain communication.
 
 ---
 
 ## Multi-Token Support (`Forwarder.sol`)
+
 - **Core Features**:
   - Multi-token swap functionality using low-level calls.
-  - Direct USDB deposit following USDC conversion.
+  - Direct WUSD deposit following USDC conversion.
 - **DEX Integration**:
   - Primary: Paraswap.
   - Supports various DEX protocols via a generic swap interface.

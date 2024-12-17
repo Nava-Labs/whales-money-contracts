@@ -7,12 +7,12 @@ import {IERC20,SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeER
 import {ERC20,ERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {SafeMath} from "../utils/SafeMath.sol";
-import {USDbFlat} from "./USDbFlat.sol";
+import {wUSDFlat} from "./wUSDFlat.sol";
 
 /**
- * @title Staked USDb for getting yield.
+ * @title Staked wUSD for getting yield.
  */
-contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
+contract swUSD is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -25,11 +25,11 @@ contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     // It depends on how long we get the yield from off-chain. (Default is 30 days)
     uint256 public vestingPeriod = 30 days;
 
-    uint256 public pooledUSDb;
+    uint256 public pooledWUSD;
     uint256 public vestingAmount;
     uint256 public lastDistributionTime;
 
-    USDbFlat public immutable flat;
+    wUSDFlat public immutable flat;
 
     struct UserCD {
         uint256 time;
@@ -47,26 +47,26 @@ contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     event Unstake(address indexed user, uint256 indexed amount);
 
     constructor(address _admin, IERC20 _asset, uint24 _CDPeriod)
-        ERC20("Staked USDb", "sUSDb")
+        ERC20("Staked wUSD", "swUSD")
         ERC4626(_asset)
-        ERC20Permit("sUSDb")
+        ERC20Permit("swUSD")
     {
         require(_CDPeriod < MAX_CD_PERIOD, "CDPERIOD_SHOULD_BE_LESS_THAN_90_DAYS");
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
 
         CDPeriod = _CDPeriod;
-        flat = new USDbFlat(address(this), _asset);
+        flat = new wUSDFlat(address(this), _asset);
     }
 
     /**
-     * @notice Add Yield(USDb) to this contract.
+     * @notice Add Yield(wUSD) to this contract.
      * Emits a `YieldReceived` event.
      */
     function addYield(uint256 _amount) external onlyRole(YIELD_MANAGER_ROLE) {
         require(_amount > 0, "TRANSFER_AMOUNT_IS_ZERO");
-        require(totalSupply() > 1 ether, "NOT_ENOUGH_TOTAL_STAKED_USDB");
+        require(totalSupply() > 1 ether, "NOT_ENOUGH_TOTAL_STAKED_WUSD");
         _updateVestingAmount(_amount);
-        pooledUSDb = pooledUSDb.add(_amount);
+        pooledWUSD = pooledWUSD.add(_amount);
         IERC20(asset()).safeTransferFrom(msg.sender, address(this), _amount);
         emit YieldReceived(_amount);
     }
@@ -124,15 +124,15 @@ contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     }
 
     /**
-     * @notice Total vested USDb in this contract.
-     * @dev To prevent ERC4626 Inflation Attacks. We use pooledUSDb to calculate totalAssets instead of balanceOf().
+     * @notice Total vested wUSD in this contract.
+     * @dev To prevent ERC4626 Inflation Attacks. We use pooledWUSD to calculate totalAssets instead of balanceOf().
      *
      * https://blog.openzeppelin.com/a-novel-defense-against-erc4626-inflation-attacks
      *
      */
     function totalAssets() public view override returns (uint256) {
         uint256 unvested = getUnvestedAmount();
-        return pooledUSDb.sub(unvested);
+        return pooledWUSD.sub(unvested);
     }
 
     /**
@@ -152,7 +152,7 @@ contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     }
 
     /**
-     * @notice Used to claim USDb after CD has finished.
+     * @notice Used to claim wUSD after CD has finished.
      * @dev Works on both mode.
      */
     function unstake() external {
@@ -224,7 +224,7 @@ contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     }
 
     /**
-     * @dev Add nonReetrant and pooledUSDb calculation.
+     * @dev Add nonReetrant and pooledWUSD calculation.
      */
     function _deposit(address _caller, address _receiver, uint256 _assets, uint256 _shares)
         internal
@@ -236,7 +236,7 @@ contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
         require(!_blacklist[_receiver], "RECIPIENT_IN_BLACKLIST");
 
         super._deposit(_caller, _receiver, _assets, _shares);
-        pooledUSDb = pooledUSDb.add(_assets);
+        pooledWUSD = pooledWUSD.add(_assets);
     }
 
     function _withdraw(address _caller, address _receiver, address _owner, uint256 _assets, uint256 _shares)
@@ -247,7 +247,7 @@ contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
         require(_assets > 0, "ASSETS_IS_ZERO");
         require(_shares > 0, "SHARES_IS_ZERO");
 
-        pooledUSDb = pooledUSDb.sub(_assets);
+        pooledWUSD = pooledWUSD.sub(_assets);
         super._withdraw(_caller, _receiver, _owner, _assets, _shares);
     }
 
@@ -265,9 +265,9 @@ contract sUSDb is AccessControl, ReentrancyGuard, ERC20Permit, ERC4626 {
     }
 
     function rescueERC20(IERC20 token, address to, uint256 amount) external onlyRole(POOL_MANAGER_ROLE) {
-        // If is USDb, check pooled amount first.
+        // If is wUSD, check pooled amount first.
         if (address(token) == asset()) {
-            require(amount <= token.balanceOf(address(this)).sub(pooledUSDb), "USDB_RESCUE_AMOUNT_EXCEED_DEBIT");
+            require(amount <= token.balanceOf(address(this)).sub(pooledWUSD), "WUSD_RESCUE_AMOUNT_EXCEED_DEBIT");
         }
         token.safeTransfer(to, amount);
     }

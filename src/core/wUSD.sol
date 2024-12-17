@@ -12,9 +12,9 @@ import {ISPCTPool} from "../interfaces/ISPCTPool.sol";
 import {ISPCTPriceOracle} from "../interfaces/ISPCTPriceOracle.sol";
 
 /**
- * @title Stablecoin backed by RWA for Bondlink protocol.
+ * @title Stablecoin backed by RWA for WhalesMoney protocol.
  */
-contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
+contract wUSD is OFT, ERC20Permit, AccessControl, Pausable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -61,8 +61,6 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     ISPCTPool public immutable spct;
     // Price oracle
     ISPCTPriceOracle public oracle;
-    // Signer Address
-    address public signerAddress;
 
     /**
      * @dev Blacklist.
@@ -82,7 +80,6 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     event RedeemFeeRateChanged(uint256 indexed newFeeRate);
     event FeeRecipientChanged(address indexed newFeeRecipient);
     event TreasuryChanged(address indexed newTreasury);
-    event SignerChanged(address indexed newSigner);
     event OracleChanged(address newOracle);
     event OwnershipTransferStarted(address indexed previousOwner, address indexed newOwner);
 
@@ -92,11 +89,10 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         IERC20 _usdc, 
         ISPCTPool _spct, 
         ISPCTPriceOracle _oracle, 
-        uint24 _cdPeriod, 
-        address _signerAddress
+        uint24 _cdPeriod
     )
-        OFT("USDb", "USDb", _endpoint, _admin)
-        ERC20Permit("USDb")
+        OFT("wUSD", "wUSD", _endpoint, _admin)
+        ERC20Permit("wUSD")
         Ownable(_admin)
     {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
@@ -104,7 +100,6 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         spct = _spct;
         oracle = _oracle;
         CDPeriod = _cdPeriod;
-        signerAddress = _signerAddress;
     }
 
     // @dev Sets an implicit cap on the amount of tokens, over uint64.max() will need some sort of outbound cap / totalSupply cap
@@ -118,19 +113,6 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
     modifier checkCollateralRate() {
         _checkCollateralRate();
-        _;
-    }
-
-    modifier isValidSignature(bytes calldata signature) {
-        require(
-            signerAddress == _recoverToAddress(
-                address(this),
-                msg.sender,
-                _useNonce(msg.sender),
-                signature
-            ),
-            "INVALID_SIGNATURE"
-        );
         _;
     }
 
@@ -177,22 +159,22 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
         IERC20(usdc).safeTransferFrom(msg.sender, treasury, _amount);
 
-        // Due to different precisions, convert it to USDb.
+        // Due to different precisions, convert it to wUSD.
         uint256 convertToSPCT = _amount.mul(1e12);
         // Get mint rate from spct for calculating.
         uint256 spctMintFeeRate = spct.mintFeeRate();
 
-        // calculate fee with USDb
+        // calculate fee with wUSD
         if (mintFeeRate == 0) {
             if (spctMintFeeRate == 0) {
-                _mintUSDb(receiver, convertToSPCT);
+                _mintWUSD(receiver, convertToSPCT);
 
                 spct.deposit(_amount);
             } else {
                 uint256 spctFeeAmount = convertToSPCT.mul(spctMintFeeRate).div(FEE_COEFFICIENT);
                 uint256 spctAmountAfterFee = convertToSPCT.sub(spctFeeAmount);
 
-                _mintUSDb(receiver, spctAmountAfterFee);
+                _mintWUSD(receiver, spctAmountAfterFee);
 
                 spct.deposit(_amount);
             }
@@ -201,10 +183,10 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
                 uint256 feeAmount = convertToSPCT.mul(mintFeeRate).div(FEE_COEFFICIENT);
                 uint256 amountAfterFee = convertToSPCT.sub(feeAmount);
 
-                _mintUSDb(receiver, amountAfterFee);
+                _mintWUSD(receiver, amountAfterFee);
 
                 if (feeAmount != 0) {
-                    _mintUSDb(feeRecipient, feeAmount);
+                    _mintWUSD(feeRecipient, feeAmount);
                 }
 
                 spct.deposit(_amount);
@@ -214,10 +196,10 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
                 uint256 feeAmount = spctAmountAfterFee.mul(mintFeeRate).div(FEE_COEFFICIENT);
                 uint256 amountAfterFee = spctAmountAfterFee.sub(feeAmount);
 
-                _mintUSDb(receiver, amountAfterFee);
+                _mintWUSD(receiver, amountAfterFee);
 
                 if (feeAmount != 0) {
-                    _mintUSDb(feeRecipient, feeAmount);
+                    _mintWUSD(feeRecipient, feeAmount);
                 }
 
                 spct.deposit(_amount);
@@ -228,7 +210,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     }
 
     /**
-     * @notice deposit SPCT. (deposit collateral to mint USDb)
+     * @notice deposit SPCT. (deposit collateral to mint wUSD)
      * Emits a `Deposit` event.
      *
      * @param _amount the amount of SPCT
@@ -240,17 +222,17 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
         IERC20(address(spct)).safeTransferFrom(msg.sender, address(this), _amount);
 
-        // calculate fee with USDb
+        // calculate fee with wUSD
         if (mintFeeRate == 0) {
-            _mintUSDb(msg.sender, _amount);
+            _mintWUSD(msg.sender, _amount);
         } else {
             uint256 feeAmount = _amount.mul(mintFeeRate).div(FEE_COEFFICIENT);
             uint256 amountAfterFee = _amount.sub(feeAmount);
 
-            _mintUSDb(msg.sender, amountAfterFee);
+            _mintWUSD(msg.sender, amountAfterFee);
 
             if (feeAmount != 0) {
-                _mintUSDb(feeRecipient, feeAmount);
+                _mintWUSD(feeRecipient, feeAmount);
             }
         }
 
@@ -258,27 +240,27 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     }
 
     /**
-     * @notice redeem USDb in cooldown period. (get back USDC from borrower and release collateral)
+     * @notice redeem wUSD in cooldown period. (get back USDC from borrower and release collateral)
      * 18 decimal input
      * Emits a `CDRedeem` event.
      *
-     * @param _amount the amount of USDb.
+     * @param _amount the amount of wUSD.
      */
-    function cdRedeem(uint256 _amount, bytes calldata _signature) external whenNotPaused checkCollateralRate isValidSignature(_signature) {
+    function cdRedeem(uint256 _amount) external whenNotPaused checkCollateralRate {
         require(_amount > 0, "REDEEM_AMOUNT_IS_ZERO");
         require(!_blacklist[msg.sender], "RECIPIENT_IN_BLACKLIST");
 
-        // Due to different precisions, convert it to USDb.
+        // Due to different precisions, convert it to wUSD.
         uint256 convertToUSDC;
         // Get redeem rate from spct for calculating.
         uint256 spctRedeemFeeRate = spct.redeemFeeRate();
 
         uint256 redeemEndedAt;
 
-        // calculate fee with USDb
+        // calculate fee with wUSD
         if (redeemFeeRate == 0) {
             if (spctRedeemFeeRate == 0) {
-                _burnUSDb(msg.sender, _amount);
+                _burnWUSD(msg.sender, _amount);
 
                 spct.redeem(_amount);
                 convertToUSDC = _amount.div(1e12);
@@ -290,7 +272,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
                 uint256 spctFeeAmount = _amount.mul(spctRedeemFeeRate).div(FEE_COEFFICIENT);
                 uint256 spctAmountAfterFee = _amount.sub(spctFeeAmount);
 
-                _burnUSDb(msg.sender, _amount);
+                _burnWUSD(msg.sender, _amount);
 
                 spct.redeem(_amount);
                 convertToUSDC = spctAmountAfterFee.div(1e12);
@@ -304,7 +286,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
                 uint256 feeAmount = _amount.mul(redeemFeeRate).div(FEE_COEFFICIENT);
                 uint256 amountAfterFee = _amount.sub(feeAmount);
 
-                _burnUSDb(msg.sender, amountAfterFee);
+                _burnWUSD(msg.sender, amountAfterFee);
 
                 if (feeAmount != 0) {
                     _transfer(msg.sender, feeRecipient, feeAmount);
@@ -322,7 +304,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
                 uint256 spctFeeAmount = amountAfterFee.mul(spctRedeemFeeRate).div(FEE_COEFFICIENT);
                 uint256 spctAmountAfterFee = amountAfterFee.sub(spctFeeAmount);
 
-                _burnUSDb(msg.sender, amountAfterFee);
+                _burnWUSD(msg.sender, amountAfterFee);
 
                 if (feeAmount != 0) {
                     _transfer(msg.sender, feeRecipient, feeAmount);
@@ -344,7 +326,7 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
      * @notice Used to claim USDC after CD has finished.
      * @dev Works on both mode.
      */
-    function redeem(bytes calldata _signature) external isValidSignature(_signature) {
+    function redeem() external {
         UserCD storage userCD = _userCD[msg.sender];
         require(block.timestamp >= userCD.time || CDPeriod == 0, "UNSTAKE_FAILED");
 
@@ -359,10 +341,10 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     }
 
     /**
-     * @notice redeem USDb. (get back SPCT)
+     * @notice redeem wUSD. (get back SPCT)
      * Emits a `Redeem` event.
      *
-     * @param _amount the amount of USDb.
+     * @param _amount the amount of wUSD.
      */
     function redeemBackSPCT(uint256 _amount) external whenNotPaused checkCollateralRate {
         require(_amount > 0, "REDEEM_AMOUNT_IS_ZERO");
@@ -370,13 +352,13 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
 
         // calculate fee with SPCT
         if (redeemFeeRate == 0) {
-            _burnUSDb(msg.sender, _amount);
+            _burnWUSD(msg.sender, _amount);
             IERC20(address(spct)).safeTransfer(msg.sender, _amount);
         } else {
             uint256 feeAmount = _amount.mul(redeemFeeRate).div(FEE_COEFFICIENT);
             uint256 amountAfterFee = _amount.sub(feeAmount);
 
-            _burnUSDb(msg.sender, amountAfterFee);
+            _burnWUSD(msg.sender, amountAfterFee);
 
             if (feeAmount != 0) {
                 _transfer(msg.sender, feeRecipient, feeAmount);
@@ -389,26 +371,26 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
     }
 
     /**
-     * @dev mint USDb for _receiver.
+     * @dev mint wUSD for _receiver.
      * Emits `Mint` and `Transfer` event.
      *
      * @param _receiver address to receive SPCT.
      * @param _amount the amount of SPCT.
      */
-    function _mintUSDb(address _receiver, uint256 _amount) internal {
+    function _mintWUSD(address _receiver, uint256 _amount) internal {
         _mint(_receiver, _amount);
         totalPooledSPCT = totalPooledSPCT.add(_amount);
         emit Mint(msg.sender, _amount);
     }
 
     /**
-     * @dev burn USDb from _receiver.
+     * @dev burn wUSD from _receiver.
      * Emits `Burn` and `Transfer` event.
      *
-     * @param _account address to burn USDb from.
-     * @param _amount the amount of USDb.
+     * @param _account address to burn wUSD from.
+     * @param _amount the amount of wUSD.
      */
-    function _burnUSDb(address _account, uint256 _amount) internal {
+    function _burnWUSD(address _account, uint256 _amount) internal {
         _burn(_account, _amount);
 
         totalPooledSPCT = totalPooledSPCT.sub(_amount);
@@ -603,61 +585,4 @@ contract USDb is OFT, ERC20Permit, AccessControl, Pausable {
         }
         token.safeTransfer(to, amount);
     }
-
-    /* -------------------------------------------------------------------------- */
-    /*                             SignatureVerification                          */
-    /* -------------------------------------------------------------------------- */
-
-    function _hash(address contractAddress, address account, uint256 nonce) 
-        internal 
-        view 
-        returns (bytes32) 
-    {
-        return
-            _hashTypedDataV4(
-                keccak256(
-                    abi.encode(
-                        keccak256(
-                          "Bondlink(address contractAddress,address account,uint256 nonce)"
-                        ),
-                        contractAddress,
-                        account,
-                        nonce
-                    )
-                )
-            );
-    }
-
-    function _recoverToAddress(
-        address contractAddress, 
-        address account, 
-        uint256 nonce,
-        bytes calldata signature
-    ) 
-        internal
-        view 
-        returns(address) 
-    {
-        return ECDSA.recover(_hash(contractAddress, account, nonce), signature);
-    }
-
-    function checkRecoverAddress(
-        address contractAddress, 
-        address account,
-        uint256 nonce,
-        bytes calldata signature
-    )
-        public
-        view
-        returns (address)
-    {
-        return _recoverToAddress(contractAddress, account, nonce, signature);
-    }    
-
-    function setSignerAddress(address _signerAddress) external onlyRole(POOL_MANAGER_ROLE) {
-        signerAddress = _signerAddress;
-        emit SignerChanged(_signerAddress);
-    }
-
-    /* --------------------------- End of SignatureVerification -------------------------- */
 }

@@ -3,11 +3,11 @@ pragma solidity ^0.8.21;
 
 import "forge-std/Script.sol";
 import {console2} from "forge-std/console2.sol";
-import {ChildsUSDb} from "../../src/core/child/ChildsUSDb.sol";
-import {BondlinkLayerZeroAdapter} from "../../src/core/sUSDbLayerZeroAdapter/BondlinkLayerZeroAdapter.sol";
-import {IBridgeToken} from "../../src/core/sUSDbLayerZeroAdapter/OFTExternal.sol";
+import {ChildswUSD} from "../../src/core/child/ChildswUSD.sol";
+import {WhalesMoneyLayerZeroAdapter} from "../../src/core/swUSDLayerZeroAdapter/WhalesMoneyLayerZeroAdapter.sol";
+import {IBridgeToken} from "../../src/core/swUSDLayerZeroAdapter/OFTExternal.sol";
 
-contract DeployChildsUSDbTestnet is Script {
+contract DeployChildswUSDTestnet is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
 
@@ -15,17 +15,17 @@ contract DeployChildsUSDbTestnet is Script {
         address l2Bridge = 0x531ef787DE4D22e5b12Db6585Ef877992C973b06;
         
         vm.startBroadcast(deployerPrivateKey);
-        ChildsUSDb _childsUDBb = new ChildsUSDb(l1Token, l2Bridge);
+        ChildswUSD _childswUDB = new ChildswUSD(l1Token, l2Bridge);
         vm.stopBroadcast();
 
         console.log(
             "contract deployed on with address: ",
-            address(_childsUDBb)
+            address(_childswUDB)
         );
     }
 }
 
-contract DeployBondlinkLayerZeroAdapter is Script {
+contract DeployWhalesMoneyLayerZeroAdapter is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         
@@ -34,7 +34,7 @@ contract DeployBondlinkLayerZeroAdapter is Script {
         address owner = 0x00338632793C9566c5938bE85219103C1BC4fDE2;
         
         vm.startBroadcast(deployerPrivateKey);
-        BondlinkLayerZeroAdapter _oftAdapter = new BondlinkLayerZeroAdapter(bridgeToken, lzEndpoint, owner);
+        WhalesMoneyLayerZeroAdapter _oftAdapter = new WhalesMoneyLayerZeroAdapter(bridgeToken, lzEndpoint, owner);
         vm.stopBroadcast();
 
         console.log(

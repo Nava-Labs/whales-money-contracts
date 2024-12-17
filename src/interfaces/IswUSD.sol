@@ -1,22 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.21;
 
-interface IsUSDb {
+interface IswUSD {
     error AccessControlBadConfirmation();
     error AccessControlUnauthorizedAccount(address account, bytes32 neededRole);
     error AddressEmptyCode(address target);
     error AddressInsufficientBalance(address account);
-    error ECDSAInvalidSignature();
-    error ECDSAInvalidSignatureLength(uint256 length);
-    error ECDSAInvalidSignatureS(bytes32 s);
     error ERC20InsufficientAllowance(address spender, uint256 allowance, uint256 needed);
     error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
     error ERC20InvalidApprover(address approver);
     error ERC20InvalidReceiver(address receiver);
     error ERC20InvalidSender(address sender);
     error ERC20InvalidSpender(address spender);
-    error ERC2612ExpiredSignature(uint256 deadline);
-    error ERC2612InvalidSigner(address signer, address owner);
     error ERC4626ExceededMaxDeposit(address receiver, uint256 assets, uint256 max);
     error ERC4626ExceededMaxMint(address receiver, uint256 shares, uint256 max);
     error ERC4626ExceededMaxRedeem(address owner, uint256 shares, uint256 max);
@@ -91,7 +86,7 @@ interface IsUSDb {
     function nonces(address owner) external view returns (uint256);
     function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
         external;
-    function pooledUSDb() external view returns (uint256);
+    function pooledWUSD() external view returns (uint256);
     function previewDeposit(uint256 assets) external view returns (uint256);
     function previewMint(uint256 shares) external view returns (uint256);
     function previewRedeem(uint256 shares) external view returns (uint256);
